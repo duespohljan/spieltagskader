@@ -171,6 +171,16 @@
   }
   .formation-btn.active { background: var(--accent-ink); color: #fff; border-color: var(--accent-ink); }
 
+  /* 11er/9er (Spielform) toggle: a compact two-segment control, separate
+     from the scrollable formation-btn pill row below it. */
+  .squad-size-picker { display: flex; gap: 6px; }
+  .squadsize-btn {
+    font-family: "Barlow Condensed"; font-weight: 700; font-size: 14.5px; letter-spacing: 0.02em;
+    padding: 7px 16px; border-radius: 999px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--ink-soft); cursor: pointer;
+  }
+  .squadsize-btn.active { background: var(--accent-ink); color: #fff; border-color: var(--accent-ink); }
+
   /* Match picker: only rendered (non-empty) when there's more than one
      upcoming fixture to choose between. */
   .match-picker { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
@@ -392,6 +402,7 @@
       <h2>Aufstellung</h2>
       <span class="hint">Position antippen, um einen Spieler einzusetzen</span>
     </div>
+    <div class="squad-size-picker" id="squadSizePicker"></div>
     <div class="formation-picker" id="formationPicker"></div>
     <div class="pitch">
       <div class="pitch-markings">
@@ -979,10 +990,22 @@
     "4-4-2 Raute": [["ST", "ST"], ["ZOM"], ["LM", "RM"], ["ZDM"], ["LV", "IV", "IV", "RV"], ["TW"]],
     "3-5-2": [["ST", "ST"], ["LM", "ZDM", "ZM", "ZOM", "RM"], ["IV", "IV", "IV"], ["TW"]],
     "5-3-2": [["ST", "ST"], ["ZM", "ZM", "ZM"], ["LV", "IV", "IV", "IV", "RV"], ["TW"]],
-    "3-4-3": [["ST", "ST", "ST"], ["LM", "ZM", "ZM", "RM"], ["IV", "IV", "IV"], ["TW"]]
+    "3-4-3": [["ST", "ST", "ST"], ["LM", "ZM", "ZM", "RM"], ["IV", "IV", "IV"], ["TW"]],
+    // 9er (Kleinfeld, 8 Feldspieler + TW) — eigene Namen, die sich mit den
+    // 11er-Bezeichnungen oben nicht überschneiden.
+    "3-3-2": [["ST", "ST"], ["LM", "ZM", "RM"], ["LV", "IV", "RV"], ["TW"]],
+    "3-2-3": [["LM", "ST", "RM"], ["ZDM", "ZDM"], ["LV", "IV", "RV"], ["TW"]],
+    "2-3-3": [["LM", "ST", "RM"], ["ZDM", "ZM", "ZOM"], ["IV", "IV"], ["TW"]],
+    "3-4-1": [["ST"], ["LM", "ZDM", "ZOM", "RM"], ["LV", "IV", "RV"], ["TW"]],
+    "4-3-1": [["ST"], ["LM", "ZM", "RM"], ["LV", "IV", "IV", "RV"], ["TW"]],
+    "2-4-2": [["ST", "ST"], ["LM", "ZDM", "ZOM", "RM"], ["IV", "IV"], ["TW"]]
   };
-  var FORMATION_ORDER = ["4-4-2", "4-3-3", "4-2-3-1", "4-1-4-1", "4-4-2 Raute", "3-5-2", "5-3-2", "3-4-3"];
-  var DEFAULT_FORMATION = "4-2-3-1";
+  var FORMATION_ORDER_11 = ["4-4-2", "4-3-3", "4-2-3-1", "4-1-4-1", "4-4-2 Raute", "3-5-2", "5-3-2", "3-4-3"];
+  var FORMATION_ORDER_9 = ["3-3-2", "3-2-3", "2-3-3", "3-4-1", "4-3-1", "2-4-2"];
+  var DEFAULT_FORMATION_11 = "4-2-3-1";
+  var DEFAULT_FORMATION_9 = "3-3-2";
+  function formationOrderFor(size) { return size === "9" ? FORMATION_ORDER_9 : FORMATION_ORDER_11; }
+  function defaultFormationFor(size) { return size === "9" ? DEFAULT_FORMATION_9 : DEFAULT_FORMATION_11; }
 
   // ---- state ----
   // A separate lineup per match, plus one independent general (mode-wide)
@@ -992,7 +1015,7 @@
   var activeMode = "matchday"; // "matchday" | "general"
   var activeMatchId = MATCHES.length ? MATCHES[0].id : null;
   var matchLineups = {}; // matchId -> { formation, slots, bench }, created lazily
-  var generalData = { formation: DEFAULT_FORMATION, slots: {}, bench: {} };
+  var generalData = { formation: DEFAULT_FORMATION_11, squadSize: "11", slots: {}, bench: {} };
 
   function findMatch(id) {
     for (var i = 0; i < MATCHES.length; i++) if (MATCHES[i].id === id) return MATCHES[i];
@@ -1000,7 +1023,7 @@
   }
   function activeMatch() { return findMatch(activeMatchId); }
   function ensureMatchLineup(matchId) {
-    if (!matchLineups[matchId]) matchLineups[matchId] = { formation: DEFAULT_FORMATION, slots: {}, bench: {} };
+    if (!matchLineups[matchId]) matchLineups[matchId] = { formation: DEFAULT_FORMATION_11, squadSize: "11", slots: {}, bench: {} };
     return matchLineups[matchId];
   }
   function cur() { return activeMode === "general" ? generalData : ensureMatchLineup(activeMatchId); }
@@ -1211,6 +1234,7 @@
     closeSheet();
     activeMode = mode;
     renderModeUi();
+    renderSquadSizePicker();
     renderFormationPicker();
     renderPitch();
     renderRoster();
@@ -1221,9 +1245,37 @@
     btn.onclick = function () { setMode(btn.getAttribute("data-mode")); };
   });
 
+  function renderSquadSizePicker() {
+    var size = cur().squadSize;
+    $("squadSizePicker").innerHTML = ["11", "9"].map(function (s) {
+      return '<button type="button" class="squadsize-btn' + (s === size ? ' active' : '') + '" data-size="' + s + '">' + s + 'er</button>';
+    }).join("");
+    $("squadSizePicker").querySelectorAll(".squadsize-btn").forEach(function (btn) {
+      btn.onclick = function () { setSquadSize(btn.getAttribute("data-size")); };
+    });
+  }
+
+  function setSquadSize(size) {
+    size = (size === "9") ? "9" : "11";
+    var d = cur();
+    if (size === d.squadSize) return;
+    d.squadSize = size;
+    d.formation = defaultFormationFor(size);
+    // An 11er/9er switch changes the whole pitch layout, so there's no
+    // meaningful "kept slot" carry-over the way a same-size formation
+    // switch has (see setFormation below) — everyone falls back into the
+    // available pool, same as taking a player off the pitch.
+    d.slots = {};
+    renderSquadSizePicker();
+    renderFormationPicker();
+    renderPitch();
+    renderRoster();
+    schedulePersist();
+  }
+
   function renderFormationPicker() {
     var f = cur().formation;
-    $("formationPicker").innerHTML = FORMATION_ORDER.map(function (key) {
+    $("formationPicker").innerHTML = formationOrderFor(cur().squadSize).map(function (key) {
       return '<button type="button" class="formation-btn' + (key === f ? ' active' : '') + '" data-formation="' + escapeHtml(key) + '">' + escapeHtml(key) + '</button>';
     }).join("");
     $("formationPicker").querySelectorAll(".formation-btn").forEach(function (btn) {
@@ -1233,7 +1285,7 @@
 
   function setFormation(key) {
     var d = cur();
-    if (!FORMATIONS[key] || key === d.formation) return;
+    if (!FORMATIONS[key] || formationOrderFor(d.squadSize).indexOf(key) === -1 || key === d.formation) return;
     d.formation = key;
     // Keep a player in place whenever their slotId still exists in the new
     // formation (e.g. "IV_1" is the first center-back in a back-four AND a
@@ -1364,6 +1416,7 @@
     renderMatchPicker();
     renderMatch();
     renderStats();
+    renderSquadSizePicker();
     renderFormationPicker();
     renderPitch();
     renderRoster();
@@ -1772,7 +1825,7 @@
     ctx.textAlign = "right";
     ctx.fillStyle = EXPORT_COLOR.ink;
     ctx.font = "700 18px 'Barlow Condensed', sans-serif";
-    ctx.fillText(d.formation, W - sidePad, 40);
+    ctx.fillText(d.formation + " \u00b7 " + d.squadSize + "er", W - sidePad, 40);
 
     ctx.strokeStyle = "rgba(22,36,28,0.12)";
     ctx.lineWidth = 1;
@@ -2036,7 +2089,10 @@
   // guest from one match can never leak into another match's saved lineup.
   function sanitizeModeData(loaded, matchId) {
     loaded = loaded && typeof loaded === "object" ? loaded : {};
-    var f = FORMATIONS[loaded.formation] ? loaded.formation : DEFAULT_FORMATION;
+    var size = loaded.squadSize === "9" ? "9" : "11";
+    var f = (FORMATIONS[loaded.formation] && formationOrderFor(size).indexOf(loaded.formation) !== -1)
+      ? loaded.formation
+      : defaultFormationFor(size);
     var validSlotIds = {};
     getFormationSlots(f).forEach(function (s) { validSlotIds[s.slotId] = true; });
 
@@ -2057,7 +2113,7 @@
       cleanBench[pid] = true;
     });
 
-    return { formation: f, slots: cleanSlots, bench: cleanBench };
+    return { formation: f, squadSize: size, slots: cleanSlots, bench: cleanBench };
   }
 
   // Same defensive idea for manual status corrections: keep only overrides
