@@ -171,6 +171,19 @@
   }
   .formation-btn.active { background: var(--accent-ink); color: #fff; border-color: var(--accent-ink); }
 
+  /* Match picker: only rendered (non-empty) when there's more than one
+     upcoming fixture to choose between. */
+  .match-picker { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .match-picker:empty { display: none; }
+  .match-picker::-webkit-scrollbar { height: 0; }
+  .match-pick-btn {
+    flex: 0 0 auto; font-family: "Barlow Condensed"; font-weight: 700; font-size: 14.5px; letter-spacing: 0.02em;
+    padding: 7px 15px; border-radius: 999px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+  }
+  .match-pick-btn .mp-date { font-weight: 500; opacity: 0.75; margin-left: 3px; }
+  .match-pick-btn.active { background: var(--accent-ink); color: #fff; border-color: var(--accent-ink); }
+
   /* Pitch action buttons: export a JPG snapshot, or force an immediate save */
   .pitch-actions { display: flex; gap: 8px; }
   .action-btn {
@@ -363,10 +376,12 @@
   </div>
 
   <div class="mode-toggle" id="modeToggle">
-    <button type="button" class="mode-btn" data-mode="matchday">Nächster Spieltag</button>
+    <button type="button" class="mode-btn" data-mode="matchday">Spieltag</button>
     <button type="button" class="mode-btn" data-mode="general">Allgemeine Aufstellung</button>
   </div>
   <div class="mode-hint" id="modeHint"></div>
+
+  <div class="match-picker matchday-only" id="matchPicker"></div>
 
   <div class="match-card matchday-only" id="matchCard"></div>
 
@@ -436,73 +451,107 @@
 (function () {
   "use strict";
 
-  var MATCH = {
-    kind: "Auswärtsspiel",
-    venue: "Hankenberge",
-    address: "Zum Hainteich 10, 49326 Melle",
-    weekday: "Freitag",
-    dateShort: "28.08.",
-    kickoff: "19:30 Uhr"
-  };
-
-  var SNAPSHOT_DATE = "27.08.2026";
-
-  // Guest players ("Gastspieler") confirmed for THIS specific fixture only.
-  // Re-set this list each time a new match is snapshotted from SpielerPlus —
-  // ids just need to be stable and never collide with real SpielerPlus ids
-  // (the "guest_" prefix guarantees that). Guests are selectable for the
-  // Spieltag lineup like any confirmed/unsure player, but eligiblePlayers()
-  // deliberately excludes them from the general (mode-independent) best-XI
-  // exercise, since they aren't part of the regular squad.
-  var GUEST_PLAYERS = [
-    { id: "guest_lui", name: "Lui", status: "confirmed", guest: true },
-    { id: "guest_ferran", name: "Ferran", status: "confirmed", guest: true },
-    { id: "guest_ibrahima", name: "Ibrahima", status: "confirmed", guest: true }
+  // Every known upcoming fixture, soonest first. This array is just the
+  // fallback shown before the shared database has ever been written to —
+  // once a weekly SpielerPlus sync exists in Firebase (under `matchinfo`),
+  // its match list overwrites this one wholesale (see applyMatchInfo below)
+  // and every visitor sees the same up-to-date fixtures without anyone
+  // re-uploading this file. Each match carries its own SpielerPlus snapshot
+  // (who's confirmed/unsure/declined for THAT game) and its own guest list
+  // ("Gastspieler" confirmed for that fixture only) — Zu-/Absagen and
+  // guests never carry over between matches. `id` just needs to be stable
+  // and unique; re-using the SpielerPlus game id (prefixed so it never
+  // collides with a player id) is an easy way to get that.
+  var MATCHES = [
+    {
+      id: "g13451655",
+      kind: "Heimspiel",
+      opponent: "Nemden",
+      address: "Zum Hainteich 10, 49326 Melle",
+      weekday: "Sonntag",
+      dateShort: "06.09.",
+      kickoff: "12:00 Uhr",
+      snapshotDate: "31.08.2026",
+      statuses: {
+        "5010991": "confirmed",
+        "10534771": "confirmed",
+        "16582398": "confirmed",
+        "5385331": "confirmed",
+        "15438303": "confirmed",
+        "9858614": "confirmed",
+        "16685952": "confirmed",
+        "15380065": "confirmed",
+        "16582426": "confirmed",
+        "11094215": "confirmed",
+        "12596708": "declined",
+        "8037754": "declined",
+        "15844148": "declined",
+        "13975693": "declined",
+        "5107663": "declined",
+        "5015379": "declined",
+        "8038029": "declined",
+        "5202386": "declined",
+        "7607943": "declined",
+        "16821956": "open",
+        "16582464": "open",
+        "16839186": "open",
+        "16582104": "open",
+        "11997558": "open",
+        "16582236": "open",
+        "15844136": "open",
+        "5569047": "open",
+        "17192543": "open",
+        "12923999": "open",
+        "17192775": "open",
+        "16238613": "open",
+        "14757576": "open",
+        "16676136": "open",
+        "5010965": "open"
+      },
+      notes: {},
+      guests: []
+    }
   ];
 
-  // status: confirmed | unsure | open | declined
+  // The regular squad. Status is never stored here — a player's response to
+  // a SPECIFIC match lives in that match's own `statuses` above (see
+  // MATCHES), since Zu-/Absagen differ per fixture.
   var PLAYERS = [
-    { id: "16821956", name: "Arne", status: "confirmed" },
-    { id: "5010991", name: "Basti", status: "confirmed" },
-    { id: "16839186", name: "Jacob Hagemann", status: "confirmed" },
-    { id: "15438303", name: "Jens", status: "confirmed" },
-    { id: "8037754", name: "Justin Niemann", status: "confirmed" },
-    { id: "16685952", name: "Lasse", status: "confirmed" },
-    { id: "15844148", name: "leonard", status: "confirmed" },
-    { id: "15380065", name: "Lukas", status: "confirmed" },
-    { id: "17192543", name: "Manuel Paland", status: "confirmed" },
-    { id: "17192775", name: "milo", status: "confirmed" },
-    { id: "16238613", name: "Mohammad", status: "confirmed" },
-    { id: "16582426", name: "Sami", status: "confirmed" },
-
-    { id: "15844136", name: "Lasse Aring", status: "unsure" },
-    { id: "11094215", name: "Wadim", status: "unsure" },
-
-    { id: "10534771", name: "Beier", status: "declined" },
-    { id: "16582398", name: "Düse", status: "declined", note: "Hochzeit" },
-    { id: "5385331", name: "Fabio", status: "declined" },
-    { id: "16582104", name: "Josch", status: "declined" },
-    { id: "11997558", name: "Justin K", status: "declined" },
-    { id: "9858614", name: "Kai Sanetra", status: "declined" },
-    { id: "16582236", name: "Kolle", status: "declined" },
-    { id: "5569047", name: "Linde", status: "declined" },
-    { id: "12923999", name: "Marcel Torwelle", status: "declined" },
-    { id: "14757576", name: "Paul", status: "declined" },
-    { id: "16676136", name: "Robin Wolter", status: "declined" },
-    { id: "5010965", name: "Simon", status: "declined" },
-    { id: "16582464", name: "David H", status: "declined" },
-    { id: "12596708", name: "DB12", status: "declined" },
-    { id: "13975693", name: "Luca", status: "declined" },
-    { id: "5107663", name: "Marvin Röhr", status: "declined" },
-    { id: "5015379", name: "Max", status: "declined" },
-    { id: "8038029", name: "Timo R.", status: "declined" },
-    { id: "5202386", name: "Tristan", status: "declined" },
-    { id: "7607943", name: "Yannic Haase", status: "declined" }
+    { id: "16821956", name: "Arne" },
+    { id: "5010991", name: "Basti" },
+    { id: "16839186", name: "Jacob Hagemann" },
+    { id: "15438303", name: "Jens" },
+    { id: "8037754", name: "Justin Niemann" },
+    { id: "16685952", name: "Lasse" },
+    { id: "15844148", name: "leonard" },
+    { id: "15380065", name: "Lukas" },
+    { id: "17192543", name: "Manuel Paland" },
+    { id: "17192775", name: "milo" },
+    { id: "16238613", name: "Mohammad" },
+    { id: "16582426", name: "Sami" },
+    { id: "15844136", name: "Lasse Aring" },
+    { id: "11094215", name: "Wadim" },
+    { id: "10534771", name: "Beier" },
+    { id: "16582398", name: "Düse" },
+    { id: "5385331", name: "Fabio" },
+    { id: "16582104", name: "Josch" },
+    { id: "11997558", name: "Justin K" },
+    { id: "9858614", name: "Kai Sanetra" },
+    { id: "16582236", name: "Kolle" },
+    { id: "5569047", name: "Linde" },
+    { id: "12923999", name: "Marcel Torwelle" },
+    { id: "14757576", name: "Paul" },
+    { id: "16676136", name: "Robin Wolter" },
+    { id: "5010965", name: "Simon" },
+    { id: "16582464", name: "David H" },
+    { id: "12596708", name: "DB12" },
+    { id: "13975693", name: "Luca" },
+    { id: "5107663", name: "Marvin Röhr" },
+    { id: "5015379", name: "Max" },
+    { id: "8038029", name: "Timo R." },
+    { id: "5202386", name: "Tristan" },
+    { id: "7607943", name: "Yannic Haase" }
   ];
-
-  // Guests join the working roster after the regular squad so they sort to
-  // the end of any full-roster listing (reference lists, roster editor).
-  GUEST_PLAYERS.forEach(function (g) { PLAYERS.push(g); });
 
   var PLAYER_PHOTOS = {
     "5010991": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgFBgcGBQgHBgcJCAgJDBMMDAsLDBgREg4THBgdHRsYGxofIywlHyEqIRobJjQnKi4vMTIxHiU2OjYwOiwwMTD/2wBDAQgJCQwKDBcMDBcwIBsgMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDD/wAARCACMAIwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDynw3/AKm4/wB9f5GtU1keHjiGf/eX+RrUzXtYZfukeZiH+8Zb05mW4yhwcdqwdeZzeSAtnmtmzfE4x6Vka2M3j1NT4yqesLlGCNtuasKjY5FTWcJaAMBxV6G1aUqiLuZiAAO5rjlN3OuMFY1/CjC7iltXtjK+PvY+UD3PQV1nh/4fWVtGZNWX7bJ95kXcqRj0I6n9PpVixTT/AAXZBr2F7i5T/lihwN3GXb+QFSzeOrC/h8p1EAxzG+SoPv0/XNZKTbG0kOudH0aEOsGh2UwYfMyxEL+BJJB/Ksy+8PeHr+NcWTWO77rW0+8n145DY9uazrmW13F7SffvJIXzGUfhjiqlvqIjudsQQhjuaGXkEjuDjr744q0KxneIPCV5pSNPAwu7HPyzoPu+zDt9ehqKKSNdDaN4P3nIziu80jVPm3bHRn4KEAhs9c9ufyP1rK8c6XbWS289gjRRXQJMePlQjqAfT2pOTGktmeeSRttxjFN8hyuFHWteW3AxkUtvADJio52aciMb7PIF21JBCUljMikorAsPUVry24EtMaEYPTrRzsOREeuyw3DR/ZE2gD5iBVCJGCfjWlJCAnPFVyAMYqXJsOVIztBYLDNk/wAa/wAjWiXX1rV+FWkW2qxal9qUN5bR7fxDV27eEdNPSMflXqYaTVNaHm4hJzep53p5DXS1DqFo1zqflQjLN0r0K48NWNrG0kIAYCotL02zjDzuoMmeDioryd72Lo2SsznW0+PTdKMbr85/wrV+GVnHda295Mm+LTYTclcZ3N0Ufmc/hUt9bi6lO4ArXReA9PS3F/5MaBpBFHljwBvz079K4pRkouTOqM03YvPpC6m0k1wAZJOX9M+lYGq+DYZQQjbSeK7cNHBHtQdOp9aoTOGbOapJWNVE89l8J6jaf8esjbeuA1VToep52yAvzwGGcV6VmlAB64qGuzHynIaNZ31tHtuk3RjoSCCKf4sWW+0SJ04+xzgMCc/I4wCPXkfrXVS456VjXNqskl3bHPlzRh1X0KsG4/KpSt1JlpqcHrVq9ssRIwDVG3YiYdOSBXeanpMV0ke8ZVazxoFqjqwXkHNaqm2rmftUtCt4i0h49Ohuo1IB5JrmxnAGec16rLaJe6QYHI2qMVy48P2qsCAeDWVKLlddhyqJGTf6TKbBZlUnjrWCy7cA9RXqhtY5rEQIRjGK4rWtJhtrsIM8ruP5mktbofOhfguwWLVtxA+aL+TV6MWQHhhXjvgC5ltob3yf4nTP5Gus/tS5x1NdtGpywSOerScpNo6nUxvtZFQgkisa1tpvIC55NZ39p3J65oj1KfPORVympEqnJG7Fp7IBuAzVzSzJa6jGAMBjzz+Vc1/atzn7xrS8O3kl1rdtFLyHcDn2Of6VlUacWjSnBqSbOmllZj1ODUJVs5zWbresCxk8t5fJA4BCbixrItvGAE4imljkTON5Qof8K5lax13OsXNKuc1SXUUMe4DIxmufvvFjCYxRyBEBwTFGWIPpnpmlo9i72V2dbJnaeKyLtsapBg43KQeevBFU9O1YXEwjSWdXOCd+DuH0q5qcSidJCSGVMqfdSGP6CovZhy8+g+PczGNgcCn+QD2rnf7anDlh1NOGuT16CkkjzXTdzc8ySGTYB8rUGHJ+6awn1uZiCeopf+EguBSXLFtobhJmw4ktyHRTisLxGGkvI3I6xD/0I1I2vTSLhqzNW1Npp4zjpHj9TWc1HdFRjJHP+AF3RXv+8n8jXU7PauX+H5IhvcDPzJ/I12UcNwy7lgYj2rnjWhBWkzWVSKdir5ftSiP2q08Vwq7jbsB9KhWQscBDmqVem9mT7aJH5XtWj4bIg12zkboJAPzGP61U3P08s/lToZ2injfbjYwb8jTdWD6j9rE63VLKOfdJHDG0ynhmHIrnG8PSyO4lEUMUjbnAGSxzmuovL1IWfGCGOax57zzZwZA7RJlmSPq3HFF1Y60k9S/bWqxWItwuBtIHFYs3h0qWMUivEx3NE6gjNaS6zayEHEiHH3WGDURuNkonhWRY34ZJO59RUNpPQpLuWrCzwd8yguP4iKi1iSNLOYvjeQVj+p4/lVqK+V0xjBrK11i/lKqs3VjgVDlFSWoTairnP+XSeWKtshAz5b/lUQDN/wAs3H4VuqsO5yc8e5CYqTyh7VP7bW/KgBe4I/Cn7SPcfPHuQGL2FZ+pJiZOP4f6mtdtg6ZrM1Qjz0/3P6mk5prcalF7Gf8ADOMvb6i2QNrx9fo1drHqLQLtUj8q4H4fs4ivducbkzj6GunZyOQK8qrBSk7nFWlabsdIt+JrYqWXPpiqNtEfMLYFZHnkc96mi1AgYzXOqLgnymfMnuXbt2R+gqaK5tjFiSP5vpWWbh5XCxKzs3AUDJNdHY+HTZ2Emp+Ina3t403i3j5lfnAHouSe9OSWkW9WVGLlsRNKtzCrAnAwv5VQSC586QR7GT/aJBJ+tb9xDFHNfwpEkUVvOIVRCThlRSxyeSctj8KzI5Y4pTHKSNw4z3r0oXjZM9KDfIrlARuDsaCLr18w8fpVi4s7n7MfLZEzyRkk4/pVki1L5zn8ae1xDjYpBJ4x7VU2b3THwR7IlJOWI5rtdJ0uKLT4hcwjzWG593UZ7flXExktwOBjj61X8Ma5rkmhWt5dXRus7w7E5ZdrBct+J614+Y4eriKP7t2SeplVmo2uekNp1of+XdfyqM6bZ/8APuv5Vj6drssqqZOc+lbUd/G4yxxXyVSNam7OTIUosjOl2J/5d1/KmNo1g3/Luv5VdWdGHykGnBwelRGrU/nKsjNbQtPPJt1/KuM8baZa2+qQrHEFBgBxj/aavQ2lHauH8eMDq0H/AF7j/wBDau/B1Z+1+J7A4xPLfhuM2mpEY4eP+TV0Mkgxg9a574bIXh1AD+9H/Jq9f8C+GYPL/tS/hRyWxAHGQAOrY7nPAr6SvVVObucc6bnUsji7Pw3rOoYa0sJ2Rujldq/XJ4rqdK+H0ULKNYujLMeTBbnCj/ec/wBBXdXV5tXEZyx6E9ves8y+VGSuSznAz1PvXnVMbUastDohhoLXcjhtdP04GDTLSK3jUfvJVGXYem4881leLYJbvwnqzRjMpiDIo/2WDYH5VpheNmcnOWPqamYAWzjAPzDIPeuejVlCrGs9Wnc3mk4cqOBt9QW41DUATxdsl/F/tJJGuSPowIqC9g8xTwDx+Rp2saNLaXi6bauIrqBnn0mVj8s0THL27H1UkkexqHTdQGoRyI0bQ3MJ2zQPwyH/AAr7JxhUjz0tv6s/62d0ctKo17k9zIdL5ZNjPlQe47Vq6bbsgLyHdI3U+1SODuPynNSqfLTc/AFc/IzqTJLu4W1tJJmYAIuah+GCukFlJJ91hdzFSMgo8kacj0JB/Ksm/wDN1y/j0q2cRowLzyn7sUY+87ewFdt4WtozpU1/DGYoLnbDZow5W2j4Q/VjuY/Ws8XL2GHlfd/1/XoYSl7SooroXrrw+JGeTSphbyAkGBz8hP8Asnt9DWPdPqlm5imUq4/hYV1TPtdZexA3D1qxN5V1GYL2NZozyrdwOxBr5dVObSRU6PWJwDeINStf+WeQPSpbfx1NEf38JrW1zw3cQo8+mE3cQ5aI/wCsUe397+dca/2eYkSfIwOCDxg11Rp0Zr34/ccsuaHU6+18c2svDptNY3i/Vra71CCRDx5AB/76asGS2WNsxsCKoao/76PPXZ/U1dLCUlPmgVCpJuzJPgXpJ1W51ESfLbRGNpW9sNgD3Ne2TOqqqQgJGgCqo6AV498ApzFb62M8M8H8nr1JLpX3jPOKjHz/AH7Xp+R1xj1RYPzEsxwo6+wqPJZ956n7o9BTBIHGD90c49TT+hGeWPb0rgbuaLQfCuD9Kcx+Tb2NKAEXB6mmnmtEtCCjremW2rWJtbsNgEMkiHDxOOjqexFcPrGnzNfRR6hcR2OtxqfsuoY2wX6D+F/RsdQf1Feit1NUtUsLXUbVrW+t0uLdsExv6joQeoPuK9LBY6WGaUvh/L79/NPf8TKpS5tVueax+J4ImeHU0W3njO1ih3ox/wBkjOake8vdTiaSytvs1oPvXt7+6iQeoB5b6CuiuPDd9bXe3QINGsbXH+vaAvMD6Y6H65p8XhbTpZ1l129u9TuARj7VxED/ALMY4/PNe3WzTDpc8bL8X92y+bMoxqPRmT4a0cavCbWw80aRI4a91CRdsmoMD/q0HaMf55r0Vo1CBEVUjjUKijoAPSoIIYlVRGd4UYUBgAAOwA6D2qcem3FfNYvGTxUvL+tX5/8ADI6KdNQ9Rij93g84/lSR52lM8pyv09KmAAPsRg1Fgq3+0h5964tjbcnhkKkHoR3rnfH+iW95pc+pW9ti9gw7NHwXXvkd8DnPWuhAG/joaljZcsrAEHgg9xj/AOvWsKrpyTMpQ5lY8MWZxxk1WvZSZEzz8v8AU1t+JtKfSdaubVVJjVt0Z/2DyKwb1mEi/wC7/U19FT5JWcTzoJxlZmh8FH2QaxjqWh/k1ejQXBEg9yc/gP8A69eafBo4j1T3aL+TV38UoSRS/I+bI9a8HMn/ALRL5fkerDY3oCYwhI3yvyieg/vH2qwZFtzhm3zt174qGz8yUHyfvvjzJvf+6o9h3q3FFFb/ACqN7nr3P51yxT3B2Ob8UalPYypB9rFkuoRMkd0wyIJVPf0VgcZ7dak8Karc39uUEwu4rVRE92U2/aJf9kf3VGOTySe1P8eaRcavoqJbRbriOdDGv+8dp/DByfpWnoumQ6Vp0FlAMrCuC2OXb+JvxNfRzqYVZZFJfvG2vu699na17dTiUant2/s/1oTh2PWlbmnbaGGDXgI7BMYAOKUokikOob6ig9BSgblNDVwK76fE33C0Z9VNUZJrmJDNFf28FqG8tZbkjEjdDtyQMe5688Y5q/fGWGxuZIXG5InYZHcKawPEWo6dp8kNlquk295ELLfa7huMkgIXywCOCcg5rtweFVadkm35f8HT+mZVanKtzRi1G5QAyXEEo9dqlD/wNCdv4g1p29wl3F50IIeM7JIyRlT1wcex4PQgiuA0LR9BuL+/j1W2+ztJqbWluIpSgibaW2ZBHfgH1rqLN4oZrLUtNLyWt3A4lDjaXCEYbHYjLV0Zlgo4fSLb87JdL9HZ9fuJoVfaavT5msZdig56Z/SmLP8AvMH/ACajvsRqSrfIfnU+oIqmJD5i8/5xXzdSfQ7FEg8ZWkU9vDeOoJQ+W59jyK8+1u2txcx+XjBjB/U16fdQDUbC5sySPNjOD6Ecj9RXj+pTP5yBjkhMfqa9zLOaqtOhw1o8sxfhA4WHVRkZ3RHH4NXZXUoMZAPODivJvDO+K1u7mGWSKWJk2lGx1zWk3ijVAmwyo2OMlBmtsdgZVajqRe569DCynSVRM940u7tG02ARzyNujG4rGfxA/HNWUuLRj5cc6qw/hJ2n8jXO+DP32gaS8nLT2SzOf9os2TW+iLMmyZVkUHHzDNeZJNSt2OGS5WyZrdTzub86BEV6O1VpLVLcB4GkTP8ACGOKfBK5HJzUpoCYK3rmg/eNKvOKTvViuBHSlA4NI3b6Uqn5TRcY5VDcHBB4IPQ1hXNhA1/pSalgtp0xe1diAJ124VSTxuUheO+0EZzxvRUsiJJEySosiMMMrqGB+oNbUcRKg20/6tb8iJwUtzip/CbMJE1OQw202oy3jyFWQorRkLyRjIbB64rc8L2xi020UyJNBYwG2WRDlZXJy7g+nAA/4FVn+ztPilylhbZHIzGCB9AeB+VNvH+x273dqBE6nBUfdce4roxma1K1L2UndeiX+fQzp4eMZcyKmoSeSjW2dwjYqh/2SQR+hP5VFk7lPvVO7kZ9amRvuxPsUeg6ge/U1aYnK/UV8zPdo9A0LJ8ToB34rx7xHavYaxcWjtkwuyZ9Rk4/SvW7M/6SgrzX4jIP+Evvcccr/KvdySo/aSj5HHiFsz//2Q==",
@@ -547,6 +596,11 @@
   PLAYERS.forEach(function (p) {
     if (!p.photo) p.photo = BLANK_PLAYER_PHOTO;
   });
+  MATCHES.forEach(function (m) {
+    m.guests.forEach(function (g) {
+      if (!g.photo) g.photo = BLANK_PLAYER_PHOTO;
+    });
+  });
 
   var STATUS_COLOR_VAR = { confirmed: "--ok", unsure: "--warn", open: "--muted", declined: "--bad" };
   var STATUS_LABEL = { confirmed: "Zugesagt", unsure: "Unsicher", open: "Offen", declined: "Abgesagt" };
@@ -581,20 +635,35 @@
   var DEFAULT_FORMATION = "4-2-3-1";
 
   // ---- state ----
-  // Two independent lineups so planning "the next matchday" (pool limited to
-  // confirmed/unsure players) never overwrites a separate, general best-XI
-  // exercise that draws from the full squad — and vice versa.
+  // A separate lineup per match, plus one independent general (mode-wide)
+  // lineup — so planning any given matchday (pool limited to that match's
+  // confirmed/unsure players) never overwrites another match's plan or the
+  // general best-XI exercise that draws from the full squad, and vice versa.
   var activeMode = "matchday"; // "matchday" | "general"
-  var dataByMode = {
-    matchday: { formation: DEFAULT_FORMATION, slots: {}, bench: {} },
-    general: { formation: DEFAULT_FORMATION, slots: {}, bench: {} }
-  };
-  function cur() { return dataByMode[activeMode]; }
+  var activeMatchId = MATCHES.length ? MATCHES[0].id : null;
+  var matchLineups = {}; // matchId -> { formation, slots, bench }, created lazily
+  var generalData = { formation: DEFAULT_FORMATION, slots: {}, bench: {} };
+
+  function findMatch(id) {
+    for (var i = 0; i < MATCHES.length; i++) if (MATCHES[i].id === id) return MATCHES[i];
+    return null;
+  }
+  function activeMatch() { return findMatch(activeMatchId); }
+  function ensureMatchLineup(matchId) {
+    if (!matchLineups[matchId]) matchLineups[matchId] = { formation: DEFAULT_FORMATION, slots: {}, bench: {} };
+    return matchLineups[matchId];
+  }
+  function cur() { return activeMode === "general" ? generalData : ensureMatchLineup(activeMatchId); }
 
   // Manual corrections to a player's SpielerPlus status (e.g. a new
-  // confirmation came in after the snapshot was taken): { playerId: status }.
-  // Applied on top of PLAYERS' baked-in snapshot everywhere status matters.
-  var statusOverrides = {};
+  // confirmation came in after the snapshot was taken), scoped per match:
+  // matchId -> { playerId: status }. Applied on top of that match's
+  // baked-in snapshot everywhere status matters.
+  var matchStatusOverrides = {};
+  function curStatusOverrides() {
+    if (!matchStatusOverrides[activeMatchId]) matchStatusOverrides[activeMatchId] = {};
+    return matchStatusOverrides[activeMatchId];
+  }
 
   var saveTimer = null;
   var activeSheetOptions = [];
@@ -607,26 +676,54 @@
     label.textContent = state === "ok" ? "gespeichert" : state === "busy" ? "speichere…" : state === "local" ? "nur in dieser Ansicht" : "geladen";
   }
 
-  function findPlayer(id) {
+  // Looks a player up among the regular squad plus (when a match context is
+  // given) that match's own guests — so a guest from one match is never
+  // mistakenly resolved while looking at a different match or general mode.
+  function findPlayerInMatch(id, matchId) {
     for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].id === id) return PLAYERS[i];
+    var m = matchId ? findMatch(matchId) : null;
+    if (m) for (var j = 0; j < m.guests.length; j++) if (m.guests[j].id === id) return m.guests[j];
     return null;
   }
+  function findPlayer(id) {
+    return findPlayerInMatch(id, activeMode === "general" ? null : activeMatchId);
+  }
 
-  // A player's effective status: the manual override if one was set via
-  // "Kader aktualisieren", otherwise the SpielerPlus snapshot baked into
-  // PLAYERS. Every place that reads status (stats, pool eligibility,
-  // reference lists, dot colors) goes through this.
+  // The regular squad plus, in matchday mode, the currently selected
+  // match's own guest players — used wherever "everyone relevant right now"
+  // is needed (stats, reference lists, the roster editor).
+  function rosterPlayers() {
+    var m = activeMode === "general" ? null : activeMatch();
+    return m ? PLAYERS.concat(m.guests) : PLAYERS.slice();
+  }
+
+  // A player's SpielerPlus snapshot status for the ACTIVE match, before any
+  // manual correction — "Offen" if that match has no data for them yet
+  // (e.g. a brand-new fixture the weekly sync hasn't filled in) or if
+  // there's no active match at all.
+  function bakedStatus(p) {
+    var m = activeMatch();
+    return (m && m.statuses[p.id]) || "open";
+  }
+
+  // A player's effective status for the active match: the manual override
+  // if one was set via "Kader aktualisieren", otherwise the baked snapshot
+  // (which itself comes straight from the shared Firebase snapshot once
+  // one exists — see applyMatchInfo). Every place that reads status
+  // (stats, pool eligibility, reference lists, dot colors) goes through
+  // this.
   function playerStatus(p) {
-    return statusOverrides[p.id] || p.status;
+    var ov = matchStatusOverrides[activeMatchId];
+    return (ov && ov[p.id]) || bakedStatus(p);
   }
 
   // Players eligible for the active mode: only confirmed/unsure responders
-  // for the next matchday, or the regular squad for a general lineup — guest
-  // players are match-specific and deliberately excluded from "general" so
-  // they never linger there once the fixture they were added for is gone.
+  // for the active matchday, or the regular squad for a general lineup —
+  // guest players are match-specific and deliberately excluded from
+  // "general" so they never linger there once their fixture is gone.
   function eligiblePlayers() {
-    if (activeMode === "general") return PLAYERS.filter(function (p) { return !p.guest; });
-    return PLAYERS.filter(function (p) { var st = playerStatus(p); return st === "confirmed" || st === "unsure"; });
+    if (activeMode === "general") return PLAYERS;
+    return rosterPlayers().filter(function (p) { var st = playerStatus(p); return st === "confirmed" || st === "unsure"; });
   }
 
   function escapeHtml(s) {
@@ -676,22 +773,56 @@
     return list;
   }
 
+  // Pill row for switching between matches — only shown once there's
+  // actually a choice to make; a single upcoming fixture (the common case
+  // right now) just shows the match card below with no picker above it.
+  function renderMatchPicker() {
+    var el = $("matchPicker");
+    if (!el) return;
+    if (MATCHES.length < 2) { el.innerHTML = ""; return; }
+    el.innerHTML = MATCHES.map(function (m) {
+      return '<button type="button" class="match-pick-btn' + (m.id === activeMatchId ? ' active' : '') + '" data-match="' + escapeHtml(m.id) + '">' +
+        escapeHtml(m.opponent) + ' <span class="mp-date">' + escapeHtml(m.dateShort) + '</span>' +
+        '</button>';
+    }).join("");
+    el.querySelectorAll(".match-pick-btn").forEach(function (btn) {
+      btn.onclick = function () { setActiveMatch(btn.getAttribute("data-match")); };
+    });
+  }
+
+  function setActiveMatch(matchId) {
+    if (matchId === activeMatchId || !findMatch(matchId)) return;
+    closeSheet();
+    activeMatchId = matchId;
+    renderAll();
+    schedulePersist();
+  }
+
   function renderMatch() {
+    var m = activeMatch();
+    if (!m) {
+      $("matchCard").innerHTML =
+        '<div class="match-main">' +
+          '<div class="venue">Kein anstehendes Spiel</div>' +
+          '<div class="addr">Sobald ein neuer Termin in SpielerPlus steht, taucht er hier automatisch auf.</div>' +
+        '</div>';
+      return;
+    }
     $("matchCard").innerHTML =
       '<div class="match-main">' +
-        '<span class="kind">' + MATCH.kind + '</span>' +
-        '<div class="venue">' + MATCH.venue + '</div>' +
-        '<div class="addr">' + MATCH.address + '</div>' +
+        '<span class="kind">' + escapeHtml(m.kind) + '</span>' +
+        '<div class="venue">' + escapeHtml(m.opponent) + '</div>' +
+        '<div class="addr">' + escapeHtml(m.address) + '</div>' +
       '</div>' +
       '<div class="match-meta">' +
-        '<div class="item"><div class="label">' + MATCH.weekday + '</div><div class="value">' + MATCH.dateShort + '</div></div>' +
-        '<div class="item"><div class="label">Anpfiff</div><div class="value">' + MATCH.kickoff + '</div></div>' +
+        '<div class="item"><div class="label">' + escapeHtml(m.weekday) + '</div><div class="value">' + escapeHtml(m.dateShort) + '</div></div>' +
+        '<div class="item"><div class="label">Anpfiff</div><div class="value">' + escapeHtml(m.kickoff) + '</div></div>' +
       '</div>';
   }
 
   function counts() {
     var c = { confirmed: 0, unsure: 0, open: 0, declined: 0 };
-    PLAYERS.forEach(function (p) { c[playerStatus(p)]++; });
+    rosterPlayers().forEach(function (p) { c[playerStatus(p)]++; });
     return c;
   }
 
@@ -715,8 +846,11 @@
     document.querySelectorAll(".matchday-only").forEach(function (el) {
       el.classList.toggle("hidden", activeMode !== "matchday");
     });
+    var hintMatch = activeMatch();
     $("modeHint").textContent = activeMode === "matchday"
-      ? "Kader für das nächste Spiel – nur Zu-/Unsicher-Rückmeldungen stehen zur Auswahl."
+      ? (hintMatch
+          ? ("Kader für " + hintMatch.kind.toLowerCase() + " gegen " + hintMatch.opponent + " – nur Zu-/Unsicher-Rückmeldungen stehen zur Auswahl.")
+          : "Kein anstehendes Spiel – sobald eins in SpielerPlus steht, taucht es hier automatisch auf.")
       : "Freie Aufstellung – der gesamte Kader steht unabhängig von Zu-/Absagen zur Auswahl.";
     $("rosterSub").textContent = activeMode === "matchday" ? "– noch nicht aufgestellt" : "– alle Spieler, noch nicht aufgestellt";
   }
@@ -849,9 +983,17 @@
     });
   }
 
+  // A player's decline reason (or any other note) for the active match, if
+  // one was recorded in that match's snapshot.
+  function playerNote(p) {
+    var m = activeMatch();
+    return (m && m.notes[p.id]) || "";
+  }
+
   function renderRefLists() {
-    var open = PLAYERS.filter(function (p) { return playerStatus(p) === "open"; });
-    var declined = PLAYERS.filter(function (p) { return playerStatus(p) === "declined"; });
+    var roster = rosterPlayers();
+    var open = roster.filter(function (p) { return playerStatus(p) === "open"; });
+    var declined = roster.filter(function (p) { return playerStatus(p) === "declined"; });
 
     $("openCount").textContent = "(" + open.length + ")";
     $("declinedCount").textContent = "(" + declined.length + ")";
@@ -861,20 +1003,23 @@
     }).join("") || '<div class="row"><span class="note">Niemand offen.</span></div>';
 
     $("declinedList").innerHTML = declined.map(function (p) {
+      var note = playerNote(p);
       return '<div class="row"><span class="name">' + escapeHtml(p.name) + '</span>' +
-        (p.note ? '<span class="note">' + escapeHtml(p.note) + '</span>' : '') + '</div>';
+        (note ? '<span class="note">' + escapeHtml(note) + '</span>' : '') + '</div>';
     }).join("") || '<div class="row"><span class="note">Niemand abgesagt.</span></div>';
   }
 
   function renderAll() {
     renderModeUi();
+    renderMatchPicker();
     renderMatch();
     renderStats();
     renderFormationPicker();
     renderPitch();
     renderRoster();
     renderRefLists();
-    $("snapshotDate").textContent = SNAPSHOT_DATE;
+    var m = activeMatch();
+    $("snapshotDate").textContent = m ? m.snapshotDate : "";
   }
 
   // ---- bottom sheet: one generic sheet, content built per context ----
@@ -958,11 +1103,13 @@
   // confirmation came in after the SpielerPlus snapshot was taken. Drill-down
   // through the same generic sheet: pick a player, then pick their status. ----
   function openRosterEditorSheet() {
-    var options = PLAYERS.map(function (p) {
+    var options = rosterPlayers().map(function (p) {
       var eff = playerStatus(p);
       var subBits = [STATUS_LABEL[eff]];
-      if (eff === "declined" && p.note) subBits.push(p.note);
-      if (statusOverrides[p.id]) subBits.push("angepasst");
+      var note = playerNote(p);
+      if (eff === "declined" && note) subBits.push(note);
+      var ov = matchStatusOverrides[activeMatchId];
+      if (ov && ov[p.id]) subBits.push("angepasst");
       return {
         label: p.name,
         sub: subBits.join(" · "),
@@ -979,10 +1126,11 @@
     var p = findPlayer(playerId);
     if (!p) return;
     var eff = playerStatus(p);
+    var baked = bakedStatus(p);
     var options = STATUS_ORDER.map(function (st) {
       var subBits = [];
       if (st === eff) subBits.push("aktuell");
-      if (st === p.status) subBits.push("SpielerPlus-Stand");
+      if (st === baked) subBits.push("SpielerPlus-Stand");
       return {
         label: STATUS_LABEL[st],
         sub: subBits.join(" · "),
@@ -996,15 +1144,17 @@
   function setStatusOverride(playerId, status) {
     var p = findPlayer(playerId);
     if (!p) return;
-    if (status === p.status) delete statusOverrides[playerId];
-    else statusOverrides[playerId] = status;
+    var ov = curStatusOverrides();
+    if (status === bakedStatus(p)) delete ov[playerId];
+    else ov[playerId] = status;
 
     // A player who's no longer confirmed/unsure (e.g. they just declined)
-    // can't stay assigned in the matchday lineup — pull them out of its
-    // slots/bench. General mode ignores status entirely, so it's untouched.
+    // can't stay assigned in the active match's lineup — pull them out of
+    // its slots/bench. General mode ignores status entirely, so it's
+    // untouched, and other matches' lineups are untouched too.
     var eff = playerStatus(p);
     if (eff !== "confirmed" && eff !== "unsure") {
-      var md = dataByMode.matchday;
+      var md = ensureMatchLineup(activeMatchId);
       Object.keys(md.slots).forEach(function (sid) { if (md.slots[sid] === playerId) delete md.slots[sid]; });
       delete md.bench[playerId];
     }
@@ -1263,8 +1413,9 @@
 
     ctx.font = "600 14px Barlow, sans-serif";
     ctx.fillStyle = EXPORT_COLOR.inkSoft;
+    var exportMatch = activeMatch();
     var subtitle = activeMode === "matchday"
-      ? (MATCH.weekday + ", " + MATCH.dateShort + " " + MATCH.kickoff + " – " + MATCH.kind + " " + MATCH.venue)
+      ? (exportMatch ? (exportMatch.weekday + ", " + exportMatch.dateShort + " " + exportMatch.kickoff + " – " + exportMatch.kind + " " + exportMatch.opponent) : "Kein anstehendes Spiel")
       : "Allgemeine Aufstellung";
     ctx.fillText(subtitle, sidePad, 62);
 
@@ -1402,7 +1553,7 @@
   // Database's URL (see SETUP.md for the exact steps to create one for
   // free). Until you do, the app still works but only saves locally in
   // your own browser tab, exactly like before.
-  var FIREBASE_DB_URL = "https://spieltagskader-default-rtdb.europe-west1.firebasedatabase.app/";
+  var FIREBASE_DB_URL = "https://spieltagskader-default-rtdb.europe-west1.firebasedatabase.app";
 
   function firebaseConfigured() {
     return FIREBASE_DB_URL.indexOf("YOUR-PROJECT-ID") === -1;
@@ -1410,6 +1561,15 @@
 
   function lineupUrl() {
     return FIREBASE_DB_URL.replace(/\/+$/, "") + "/lineup.json";
+  }
+
+  // Match info (the full list of upcoming fixtures, each with its own
+  // opponent/venue/kickoff and SpielerPlus confirmation snapshot) lives
+  // under its own key so it can be refreshed independently of the lineup —
+  // the weekly automated update writes only here, via a plain PUT of the
+  // complete current fixture list, without ever touching this file again.
+  function matchInfoUrl() {
+    return FIREBASE_DB_URL.replace(/\/+$/, "") + "/matchinfo.json";
   }
 
   function showSetupBanner() {
@@ -1429,9 +1589,10 @@
     var savedAt = Date.now();
     var pendingSnapshot = {
       mode: activeMode,
-      matchday: dataByMode.matchday,
-      general: dataByMode.general,
-      statusOverrides: statusOverrides,
+      activeMatchId: activeMatchId,
+      matchLineups: matchLineups,
+      general: generalData,
+      matchStatusOverrides: matchStatusOverrides,
       savedAt: savedAt
     };
     fetch(lineupUrl(), {
@@ -1455,11 +1616,75 @@
       .catch(function () { return null; });
   }
 
+  function loadMatchInfo() {
+    if (!firebaseConfigured()) return Promise.resolve(null);
+    return fetch(matchInfoUrl(), { cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) { return (data && typeof data === "object") ? data : null; })
+      .catch(function () { return null; });
+  }
+
+  // Defensive in the same spirit as sanitizeModeData/sanitizeStatusOverridesForMatch
+  // below: only accept well-shaped match records and statuses for players
+  // that still exist, so a malformed or stale write can't crash rendering.
+  // `rawList` is the full current fixture list as written by the weekly
+  // automated update (see applyMatchInfo) — each match is self-contained.
+  function sanitizeMatches(rawList) {
+    if (!Array.isArray(rawList)) return null;
+    var clean = [];
+    rawList.forEach(function (m) {
+      if (!m || typeof m !== "object" || typeof m.id !== "string" || !m.id) return;
+      var statuses = {};
+      Object.keys(m.statuses || {}).forEach(function (pid) {
+        var st = m.statuses[pid];
+        if (!findPlayerInMatch(pid, null)) return; // statuses only ever reference the regular squad
+        if (STATUS_ORDER.indexOf(st) === -1) return;
+        statuses[pid] = st;
+      });
+      var notes = {};
+      Object.keys(m.notes || {}).forEach(function (pid) {
+        if (typeof m.notes[pid] === "string" && findPlayerInMatch(pid, null)) notes[pid] = m.notes[pid];
+      });
+      var guests = [];
+      (Array.isArray(m.guests) ? m.guests : []).forEach(function (g) {
+        if (g && typeof g.id === "string" && g.id && typeof g.name === "string" && g.name) {
+          guests.push({ id: g.id, name: g.name, guest: true, photo: BLANK_PLAYER_PHOTO });
+        }
+      });
+      var cleanMatch = { id: m.id, statuses: statuses, notes: notes, guests: guests };
+      ["kind", "opponent", "address", "weekday", "dateShort", "kickoff", "snapshotDate"].forEach(function (k) {
+        cleanMatch[k] = typeof m[k] === "string" ? m[k] : "";
+      });
+      clean.push(cleanMatch);
+    });
+    return clean;
+  }
+
+  var lastKnownMatchInfoSavedAt = 0;
+
+  // Replaces the local MATCHES array wholesale with the shared Firebase
+  // snapshot once one exists — the weekly automated update always writes
+  // the complete current fixture list, so a match no longer in SpielerPlus
+  // (played, cancelled) naturally drops out here too. Until Firebase has
+  // ever been written to, the local bootstrap fallback at the top of this
+  // file keeps showing instead.
+  function applyMatchInfo(loaded) {
+    if (!loaded || typeof loaded !== "object") return;
+    var clean = sanitizeMatches(loaded.matches);
+    if (!clean || !clean.length) return;
+    MATCHES = clean;
+    if (!findMatch(activeMatchId)) activeMatchId = MATCHES[0].id;
+    lastKnownMatchInfoSavedAt = typeof loaded.savedAt === "number" ? loaded.savedAt : Date.now();
+  }
+
   // Defensive against saved data that no longer matches the current
-  // PLAYERS roster or FORMATIONS catalog (e.g. this file gets reused for a
-  // future game with an updated player list) — drop anything that no
-  // longer resolves instead of letting a stale reference crash rendering.
-  function sanitizeModeData(loaded) {
+  // PLAYERS roster, that match's guests, or the FORMATIONS catalog (e.g.
+  // this file gets reused for a future game with an updated player list) —
+  // drop anything that no longer resolves instead of letting a stale
+  // reference crash rendering. `matchId` is null for the general lineup
+  // (which never has guests) and the specific match's id otherwise, so a
+  // guest from one match can never leak into another match's saved lineup.
+  function sanitizeModeData(loaded, matchId) {
     loaded = loaded && typeof loaded === "object" ? loaded : {};
     var f = FORMATIONS[loaded.formation] ? loaded.formation : DEFAULT_FORMATION;
     var validSlotIds = {};
@@ -1469,7 +1694,7 @@
     Object.keys(loaded.slots || {}).forEach(function (slotId) {
       var pid = loaded.slots[slotId];
       if (!validSlotIds[slotId]) return;
-      if (!findPlayer(pid)) return;
+      if (!findPlayerInMatch(pid, matchId)) return;
       if (usedPlayerIds[pid]) return; // guard against corrupted data assigning one player twice
       cleanSlots[slotId] = pid;
       usedPlayerIds[pid] = true;
@@ -1477,7 +1702,7 @@
 
     var cleanBench = {};
     Object.keys(loaded.bench || {}).forEach(function (pid) {
-      if (!findPlayer(pid)) return;
+      if (!findPlayerInMatch(pid, matchId)) return;
       if (usedPlayerIds[pid]) return; // already on the pitch takes precedence
       cleanBench[pid] = true;
     });
@@ -1486,12 +1711,13 @@
   }
 
   // Same defensive idea for manual status corrections: keep only overrides
-  // for players that still exist and status values that are still valid.
-  function sanitizeStatusOverrides(loaded) {
+  // for players that still exist (in that match's context) and status
+  // values that are still valid.
+  function sanitizeStatusOverridesForMatch(loaded, matchId) {
     var clean = {};
     Object.keys(loaded || {}).forEach(function (pid) {
       var st = loaded[pid];
-      if (!findPlayer(pid)) return;
+      if (!findPlayerInMatch(pid, matchId)) return;
       if (STATUS_ORDER.indexOf(st) === -1) return;
       clean[pid] = st;
     });
@@ -1502,16 +1728,30 @@
 
   function applyLoadedState(loaded) {
     if (!loaded) return;
-    if (loaded.matchday || loaded.general) {
-      // current two-mode format
-      dataByMode.matchday = sanitizeModeData(loaded.matchday);
-      dataByMode.general = sanitizeModeData(loaded.general);
+    if (loaded.matchLineups || loaded.general) {
+      // current multi-match format
+      generalData = sanitizeModeData(loaded.general, null);
+      matchLineups = {};
+      matchStatusOverrides = {};
+      MATCHES.forEach(function (m) {
+        matchLineups[m.id] = sanitizeModeData((loaded.matchLineups || {})[m.id], m.id);
+        matchStatusOverrides[m.id] = sanitizeStatusOverridesForMatch((loaded.matchStatusOverrides || {})[m.id], m.id);
+      });
       activeMode = loaded.mode === "general" ? "general" : "matchday";
-      statusOverrides = sanitizeStatusOverrides(loaded.statusOverrides);
-    } else if (loaded.slots) {
-      // legacy single-lineup format from before the mode toggle existed —
-      // migrate it into the matchday lineup so nobody's prior work is lost.
-      dataByMode.matchday = sanitizeModeData(loaded);
+      if (loaded.activeMatchId && findMatch(loaded.activeMatchId)) activeMatchId = loaded.activeMatchId;
+    } else if (loaded.matchday || loaded.slots) {
+      // legacy single-match format from before multi-match support existed
+      // — migrate it into the current first match's lineup so nobody's
+      // prior work is lost (only meaningful if that's still the same
+      // fixture; otherwise it just harmlessly finds no valid slots).
+      var legacy = loaded.matchday || loaded;
+      if (MATCHES[0]) {
+        matchLineups[MATCHES[0].id] = sanitizeModeData(legacy, MATCHES[0].id);
+        if (loaded.statusOverrides) {
+          matchStatusOverrides[MATCHES[0].id] = sanitizeStatusOverridesForMatch(loaded.statusOverrides, MATCHES[0].id);
+        }
+      }
+      if (loaded.general) generalData = sanitizeModeData(loaded.general, null);
       activeMode = "matchday";
     }
     lastKnownSavedAt = loaded.savedAt || Date.now();
@@ -1527,11 +1767,18 @@
     if (saveTimer) return; // a local edit is about to persist; don't race it
     var backdrop = $("sheetBackdrop");
     if (backdrop && backdrop.classList.contains("open")) return;
-    loadState().then(function (loaded) {
+    var changed = false;
+    Promise.all([loadState(), loadMatchInfo()]).then(function (results) {
+      var loaded = results[0], matchInfo = results[1];
       if (loaded && loaded.savedAt && loaded.savedAt > lastKnownSavedAt) {
         applyLoadedState(loaded);
-        renderAll();
+        changed = true;
       }
+      if (matchInfo && matchInfo.savedAt && matchInfo.savedAt > lastKnownMatchInfoSavedAt) {
+        applyMatchInfo(matchInfo);
+        changed = true;
+      }
+      if (changed) renderAll();
     });
   }
   setInterval(pollForUpdates, 5000);
@@ -1540,8 +1787,9 @@
   });
 
   showSetupBanner();
-  loadState().then(function (loaded) {
-    applyLoadedState(loaded);
+  Promise.all([loadState(), loadMatchInfo()]).then(function (results) {
+    applyLoadedState(results[0]);
+    applyMatchInfo(results[1]);
     renderAll();
     setSaveState(firebaseConfigured() ? "ok" : "local");
   });
