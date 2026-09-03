@@ -112,7 +112,8 @@
   /* ---------- Mode toggle ---------- */
   .mode-toggle { display: flex; gap: 4px; background: var(--surface-alt); padding: 4px; border-radius: 999px; border: 1px solid var(--border); }
   .mode-btn {
-    flex: 1; font-family: "Barlow Condensed"; font-weight: 700; font-size: 14px; letter-spacing: 0.01em;
+    flex: 1; font-family: "Barlow Condensed"; font-weight: 700; font-size: 14px; letter-spacing: 0.03em;
+    text-transform: uppercase;
     padding: 9px 8px; border-radius: 999px; border: none; background: transparent; color: var(--ink-soft);
     cursor: pointer;
   }
@@ -175,24 +176,35 @@
      from the scrollable formation-btn pill row below it. */
   .squad-size-picker { display: flex; gap: 6px; }
   .squadsize-btn {
-    font-family: "Barlow Condensed"; font-weight: 700; font-size: 14.5px; letter-spacing: 0.02em;
-    padding: 7px 16px; border-radius: 999px; border: 1.5px solid var(--border);
+    font-family: "Barlow Condensed"; font-weight: 700; font-size: 12.5px; letter-spacing: 0.02em;
+    padding: 5px 12px; border-radius: 999px; border: 1.5px solid var(--border);
     background: var(--surface); color: var(--ink-soft); cursor: pointer;
   }
   .squadsize-btn.active { background: var(--accent-ink); color: #fff; border-color: var(--accent-ink); }
 
-  /* Match picker: only rendered (non-empty) when there's more than one
-     upcoming fixture to choose between. */
-  .match-picker { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
-  .match-picker:empty { display: none; }
-  .match-picker::-webkit-scrollbar { height: 0; }
-  .match-pick-btn {
-    flex: 0 0 auto; font-family: "Barlow Condensed"; font-weight: 700; font-size: 14.5px; letter-spacing: 0.02em;
-    padding: 7px 15px; border-radius: 999px; border: 1.5px solid var(--border);
-    background: var(--surface); color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+  /* Match picker: a native dropdown, only rendered (non-empty) when
+     there's more than one upcoming fixture to choose between. */
+  .match-picker-select {
+    display: block; width: 100%; box-sizing: border-box;
+    font-family: "Barlow Condensed"; font-weight: 700; font-size: 16px; letter-spacing: 0.02em;
+    padding: 10px 34px 10px 15px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23526056"><path d="M5.5 7.5l4.5 4.5 4.5-4.5" stroke="%23526056" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 12px center;
+    background-size: 14px; -webkit-appearance: none; appearance: none;
+    color: var(--ink); cursor: pointer;
   }
-  .match-pick-btn .mp-date { font-weight: 500; opacity: 0.75; margin-left: 3px; }
-  .match-pick-btn.active { background: var(--accent-ink); color: #fff; border-color: var(--accent-ink); }
+  .match-picker-select:empty, .match-picker-select[hidden] { display: none; }
+
+  /* Formation dropdown + 11er/9er toggle, side by side on one row. */
+  .picker-row { display: flex; gap: 8px; align-items: center; }
+  .formation-picker-select {
+    flex: 1; min-width: 0; box-sizing: border-box;
+    font-family: "Barlow Condensed"; font-weight: 700; font-size: 12.5px; letter-spacing: 0.02em;
+    padding: 5px 26px 5px 12px; border-radius: 8px; border: 1.5px solid var(--border);
+    background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23526056"><path d="M5.5 7.5l4.5 4.5 4.5-4.5" stroke="%23526056" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 9px center;
+    background-size: 12px; -webkit-appearance: none; appearance: none;
+    color: var(--ink); cursor: pointer;
+  }
+  .picker-row .squad-size-picker { flex: 0 0 auto; }
 
   /* Pitch action buttons: export a JPG snapshot, or force an immediate save */
   .pitch-actions { display: flex; gap: 8px; }
@@ -263,11 +275,16 @@
     font-family: "Barlow Condensed"; font-weight: 700; font-size: 13.5px; letter-spacing: 0.03em;
   }
   .slot.empty:hover { background: rgba(255,255,255,0.14); }
+  /* Drag-and-drop: an empty slot lights up while a chip/player is dragged
+     over it, so it's clear it'll accept the drop. */
+  .slot.empty.drop-hover { background: rgba(238,176,44,0.28); border-color: var(--accent); border-style: solid; }
   .slot.filled {
     background: var(--surface); color: var(--ink); border: 1px solid rgba(0,0,0,0.08);
     font-weight: 600; font-size: 13.5px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    cursor: grab;
   }
+  .slot.filled.dragging { opacity: 0.4; }
   .slot .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .slot .slot-code { font-family: "Barlow Condensed"; font-weight: 700; font-size: 10.5px; letter-spacing: 0.04em; color: var(--ink-faint); }
 
@@ -287,11 +304,16 @@
     border-radius: 999px;
     padding: 5px 11px 5px 8px;
     font: inherit; font-size: 13.5px; font-weight: 600;
-    cursor: pointer;
+    cursor: grab;
     box-shadow: 0 1px 3px rgba(0,0,0,0.18);
     transition: transform 0.12s ease;
   }
   .chip:hover { transform: translateY(-1px); }
+  .chip.dragging { opacity: 0.4; }
+  /* Drag-and-drop target: "Verfügbarer Kader" / "Bank" light up while a
+     player is dragged over them (dropping returns them from the pitch or
+     moves them between pool and bench). */
+  #poolCard.drop-hover, #benchCard.drop-hover { box-shadow: 0 0 0 2px var(--accent) inset; }
   .chip:active { transform: translateY(0); }
   .chip .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
@@ -304,6 +326,11 @@
   .avatar-badge { position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--surface); box-sizing: content-box; }
 
   /* ---------- Pool / Bench ---------- */
+  /* Wraps the two cards so they can become one grid item on wide screens
+     (see the desktop breakpoint) -- "display: contents" here means it's
+     invisible to layout below that breakpoint, so .wrap's flex column
+     stacks poolCard/benchCard exactly as if this wrapper weren't there. */
+  .roster-stack { display: contents; }
   .roster-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
     box-shadow: var(--shadow); padding: 14px 16px 16px;
@@ -359,6 +386,117 @@
   .opt-btn .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .opt-btn .opt-sub { margin-left: auto; font-size: 11.5px; color: var(--ink-faint); font-weight: 500; white-space: nowrap; }
   .opt-empty { font-size: 13.5px; color: var(--ink-faint); padding: 10px 2px; }
+
+  /* Spielerinfo: read-only FuPa-Saisonstatistik inside the generic sheet. */
+  .player-info-source { font-size: 12.5px; color: var(--ink-faint); font-weight: 600; margin-bottom: 8px; }
+  .player-info-source .pi-unsure { color: var(--warn); font-weight: 500; }
+  .player-info-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 6px; }
+  .pi-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface-alt);
+  }
+  .pi-label { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
+  .pi-val { font-family: "Barlow Condensed"; font-size: 18px; font-weight: 700; color: var(--ink); }
+
+  /* Spielerinfo panel: photo + FuPa/Training tab switcher. Bottom sheet on
+     narrow screens (same slide-up mechanics as .sheet above); on wide
+     screens it becomes a drawer anchored to the right of the lineup. */
+  .player-panel-backdrop {
+    position: fixed; inset: 0; background: rgba(10,14,10,0.35);
+    opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 42;
+  }
+  .player-panel-backdrop.open { opacity: 1; pointer-events: auto; }
+  .player-panel {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 43;
+    background: var(--surface);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.25);
+    padding: 16px 18px calc(18px + env(safe-area-inset-bottom));
+    transform: translateY(105%);
+    transition: transform 0.2s ease;
+    max-width: 760px; margin: 0 auto;
+    max-height: 85vh;
+    display: flex; flex-direction: column;
+  }
+  .player-panel.open { transform: translateY(0); }
+  .player-panel-close {
+    position: absolute; top: 12px; right: 14px; width: 30px; height: 30px; border-radius: 50%;
+    border: none; background: var(--surface-alt); color: var(--ink-soft); font-size: 20px; line-height: 1; cursor: pointer;
+  }
+  .player-panel-photo-wrap { display: flex; justify-content: center; margin: 2px 0 10px; flex-shrink: 0; }
+  .player-panel-photo { width: 136px; height: 136px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); }
+  .player-panel-name { font-family: "Barlow Condensed"; font-size: 24px; font-weight: 700; text-align: center; flex-shrink: 0; }
+  .player-panel-sub { text-align: center; font-size: 12px; color: var(--ink-faint); font-weight: 600; margin: 2px 0 14px; flex-shrink: 0; }
+  .player-panel-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
+  .ppt-btn {
+    flex: 1; font-family: "Barlow Condensed"; font-weight: 700; font-size: 14.5px; letter-spacing: 0.02em;
+    padding: 8px 10px; border-radius: 999px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--ink-soft); cursor: pointer;
+  }
+  .ppt-btn.active { background: var(--accent-ink); color: #fff; border-color: var(--accent-ink); }
+  .player-panel-body { overflow-y: auto; }
+  @media (min-width: 900px) {
+    .player-panel {
+      left: auto; right: 0; bottom: 0; top: 0; margin: 0;
+      width: 360px; max-width: 90vw; max-height: none;
+      border-radius: 18px 0 0 18px;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.25);
+      transform: translateX(105%);
+      padding-top: 20px;
+    }
+    .player-panel.open { transform: translateX(0); }
+  }
+
+  /* ---------- Desktop layout: three columns (roster/bench/open-declined |
+     pitch | player profile), matching the wide-screen mockup. Below this
+     breakpoint everything stays in the single centered column above. ---------- */
+  @media (min-width: 1180px) {
+    body { padding: 28px 24px 80px; }
+    .wrap {
+      display: grid;
+      max-width: 1300px;
+      grid-template-columns: 300px minmax(420px, 620px) 320px;
+      column-gap: 26px;
+      row-gap: 18px;
+      align-items: start;
+      grid-template-areas:
+        "topbar   topbar    topbar"
+        ".        toggle    ."
+        ".        hint      ."
+        ".        picker    ."
+        ".        matchcard ."
+        ".        stats     ."
+        "pool     pitchsec  profile"
+        ".        refgrid   profile"
+        "footer   footer    footer";
+    }
+    .topbar { grid-area: topbar; }
+    #modeToggle { grid-area: toggle; }
+    #modeHint { grid-area: hint; margin-top: 0; }
+    #matchPicker { grid-area: picker; }
+    #matchCard { grid-area: matchcard; }
+    #statsRow { grid-area: stats; }
+    .pitch-section { grid-area: pitchsec; }
+    #rosterStack { display: flex; flex-direction: column; gap: 18px; grid-area: pool; }
+    #refGrid { grid-area: refgrid; grid-template-columns: 1fr; }
+    footer { grid-area: footer; }
+
+    /* The Spielerinfo panel becomes a permanently visible column instead of
+       an overlay drawer -- position:relative (not static) so its close
+       button, which is positioned absolutely, still anchors to the card
+       rather than escaping to the page. */
+    .player-panel {
+      grid-area: profile;
+      position: relative; left: auto; right: auto; top: auto; bottom: auto; margin: 0;
+      width: auto; max-width: none; height: auto; max-height: none;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transform: none;
+      padding: 18px 18px 16px;
+    }
+    .player-panel-backdrop { display: none !important; }
+  }
+
   .sheet-cancel {
     flex-shrink: 0; width: 100%; font: inherit; font-weight: 600; font-size: 13.5px;
     padding: 11px; border-radius: 10px; border: 1.5px solid var(--border);
@@ -387,11 +525,11 @@
 
   <div class="mode-toggle" id="modeToggle">
     <button type="button" class="mode-btn" data-mode="matchday">Spieltag</button>
-    <button type="button" class="mode-btn" data-mode="general">Allgemeine Aufstellung</button>
+    <button type="button" class="mode-btn" data-mode="general">Standard</button>
   </div>
   <div class="mode-hint" id="modeHint"></div>
 
-  <div class="match-picker matchday-only" id="matchPicker"></div>
+  <select class="match-picker-select matchday-only" id="matchPicker" hidden></select>
 
   <div class="match-card matchday-only" id="matchCard"></div>
 
@@ -402,8 +540,10 @@
       <h2>Aufstellung</h2>
       <span class="hint">Position antippen, um einen Spieler einzusetzen</span>
     </div>
-    <div class="squad-size-picker" id="squadSizePicker"></div>
-    <div class="formation-picker" id="formationPicker"></div>
+    <div class="picker-row">
+      <select class="formation-picker-select" id="formationPicker"></select>
+      <div class="squad-size-picker" id="squadSizePicker"></div>
+    </div>
     <div class="pitch">
       <div class="pitch-markings">
         <div class="pm-sidelines"></div>
@@ -416,20 +556,22 @@
     </div>
     <div class="pitch-actions">
       <button type="button" class="action-btn" id="shareBtn">Teilen</button>
-      <button type="button" class="action-btn" id="clearLineupBtn">Aufstellung leeren</button>
-      <button type="button" class="action-btn action-btn-accent matchday-only" id="updateRosterBtn">Kader aktualisieren</button>
+      <button type="button" class="action-btn" id="clearLineupBtn">Leeren</button>
+      <button type="button" class="action-btn action-btn-accent matchday-only" id="updateRosterBtn">Kader anpassen</button>
     </div>
     <div class="pitch-actions-status" id="pitchActionsStatus"></div>
   </div>
 
-  <div class="roster-card">
-    <h3>Verfügbarer Kader <span class="sub" id="rosterSub">– noch nicht aufgestellt</span></h3>
-    <div class="chips" id="poolChips"></div>
-  </div>
+  <div class="roster-stack" id="rosterStack">
+    <div class="roster-card" id="poolCard">
+      <h3>Verfügbarer Kader <span class="sub" id="rosterSub">– noch nicht aufgestellt</span></h3>
+      <div class="chips" id="poolChips"></div>
+    </div>
 
-  <div class="roster-card">
-    <h3>Bank <span class="sub">– Auswechselspieler</span></h3>
-    <div class="chips" id="benchChips"></div>
+    <div class="roster-card" id="benchCard">
+      <h3>Bank <span class="sub">– Auswechselspieler</span></h3>
+      <div class="chips" id="benchChips"></div>
+    </div>
   </div>
 
   <div class="ref-grid matchday-only" id="refGrid">
@@ -441,6 +583,23 @@
       <h3><span class="dot" style="background:var(--bad)"></span>Abgesagt <span id="declinedCount" style="color:var(--ink-faint); font-weight:500;"></span></h3>
       <div class="ref-list" id="declinedList"></div>
     </div>
+  </div>
+
+  <!-- Spielerinfo: photo + FuPa/Training tab switcher, docked as its own
+       column on wide screens (see .player-panel CSS in the desktop grid
+       breakpoint), a bottom sheet on narrow ones. Lives inside .wrap so it
+       can participate in the desktop grid layout. -->
+  <div class="player-panel-backdrop" id="playerPanelBackdrop"></div>
+  <div class="player-panel" id="playerPanel">
+    <button type="button" class="player-panel-close" id="playerPanelClose" aria-label="Schließen">&times;</button>
+    <div class="player-panel-photo-wrap"><img class="player-panel-photo" id="playerPanelPhoto" alt=""></div>
+    <div class="player-panel-name" id="playerPanelName">Kein Spieler ausgewählt</div>
+    <div class="player-panel-sub" id="playerPanelSub"></div>
+    <div class="player-panel-tabs" id="playerPanelTabs">
+      <button type="button" class="ppt-btn" data-tab="fupa">FuPa</button>
+      <button type="button" class="ppt-btn" data-tab="training">Training</button>
+    </div>
+    <div class="player-panel-body" id="playerPanelBody"><div class="opt-empty">Wähle einen Spieler aus der Aufstellung oder dem Kader, um FuPa- und Trainingsstatistik zu sehen.</div></div>
   </div>
 
   <footer>
@@ -482,42 +641,46 @@
       weekday: "Sonntag",
       dateShort: "06.09.",
       kickoff: "12:00 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       statuses: {
+        "5010965": "confirmed",
         "5010991": "confirmed",
-        "10534771": "confirmed",
-        "16582398": "confirmed",
         "5385331": "confirmed",
-        "15438303": "confirmed",
+        "5569047": "confirmed",
         "9858614": "confirmed",
-        "16685952": "confirmed",
-        "15380065": "confirmed",
-        "16582426": "confirmed",
+        "10534771": "confirmed",
         "11094215": "confirmed",
-        "12596708": "declined",
-        "8037754": "declined",
-        "15844148": "declined",
-        "13975693": "declined",
-        "5107663": "declined",
+        "15380065": "confirmed",
+        "15438303": "confirmed",
+        "15844136": "confirmed",
+        "15844148": "confirmed",
+        "16238613": "confirmed",
+        "16582398": "confirmed",
+        "16582426": "confirmed",
+        "16676136": "confirmed",
+        "16685952": "confirmed",
+        "16821956": "confirmed",
+        "17192543": "confirmed",
+        "17192775": "confirmed",
         "5015379": "declined",
-        "8038029": "declined",
+        "5107663": "declined",
         "5202386": "declined",
         "7607943": "declined",
-        "16821956": "open",
-        "16582464": "open",
-        "16839186": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "5569047": "open",
-        "17192543": "open",
+        "8037754": "declined",
+        "8038029": "declined",
+        "11997558": "declined",
+        "12596708": "declined",
+        "13975693": "declined",
+        "14757576": "declined",
+        "16582236": "declined",
+        "16582464": "declined",
+        "17269531": "declined",
         "12923999": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "5010965": "open"
+        "16582104": "open",
+        "16839186": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -530,44 +693,48 @@
       weekday: "Sonntag",
       dateShort: "13.09.",
       kickoff: "12:30 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
         "5010991": "confirmed",
+        "5385331": "confirmed",
         "8037754": "confirmed",
         "9858614": "confirmed",
         "15380065": "confirmed",
         "5010965": "declined",
-        "12596708": "declined",
-        "15844148": "declined",
-        "13975693": "declined",
-        "5107663": "declined",
         "5015379": "declined",
+        "5107663": "declined",
         "5202386": "declined",
         "7607943": "declined",
-        "16821956": "open",
-        "10534771": "open",
-        "16582464": "open",
-        "16582398": "open",
-        "5385331": "open",
-        "16839186": "open",
-        "15438303": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "16685952": "open",
+        "12596708": "declined",
+        "13975693": "declined",
+        "15844148": "declined",
         "5569047": "open",
-        "17192543": "open",
-        "12923999": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "16582426": "open",
         "8038029": "open",
-        "11094215": "open"
+        "10534771": "open",
+        "11094215": "open",
+        "11997558": "open",
+        "12923999": "open",
+        "14757576": "open",
+        "15438303": "open",
+        "15844136": "open",
+        "16238613": "open",
+        "16582104": "open",
+        "16582236": "open",
+        "16582398": "open",
+        "16582426": "open",
+        "16582464": "open",
+        "16676136": "open",
+        "16685952": "open",
+        "16821956": "open",
+        "16839186": "open",
+        "17192543": "open",
+        "17192775": "open",
+        "17269531": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -580,44 +747,48 @@
       weekday: "Sonntag",
       dateShort: "20.09.",
       kickoff: "12:00 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
         "5010991": "confirmed",
         "8037754": "confirmed",
-        "15380065": "declined",
         "5010965": "declined",
-        "12596708": "declined",
-        "15844148": "declined",
-        "13975693": "declined",
-        "5107663": "declined",
         "5015379": "declined",
+        "5107663": "declined",
         "5202386": "declined",
         "7607943": "declined",
-        "16821956": "open",
-        "10534771": "open",
-        "16582464": "open",
-        "16582398": "open",
+        "12596708": "declined",
+        "13975693": "declined",
+        "15380065": "declined",
+        "15844148": "declined",
         "5385331": "open",
-        "16839186": "open",
-        "15438303": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "9858614": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "16685952": "open",
         "5569047": "open",
-        "17192543": "open",
-        "12923999": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "16582426": "open",
         "8038029": "open",
-        "11094215": "open"
+        "9858614": "open",
+        "10534771": "open",
+        "11094215": "open",
+        "11997558": "open",
+        "12923999": "open",
+        "14757576": "open",
+        "15438303": "open",
+        "15844136": "open",
+        "16238613": "open",
+        "16582104": "open",
+        "16582236": "open",
+        "16582398": "open",
+        "16582426": "open",
+        "16582464": "open",
+        "16676136": "open",
+        "16685952": "open",
+        "16821956": "open",
+        "16839186": "open",
+        "17192543": "open",
+        "17192775": "open",
+        "17269531": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -630,44 +801,48 @@
       weekday: "Freitag",
       dateShort: "25.09.",
       kickoff: "19:30 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
         "8037754": "confirmed",
-        "12596708": "declined",
-        "15844148": "declined",
-        "13975693": "declined",
-        "5107663": "declined",
         "5015379": "declined",
+        "5107663": "declined",
         "5202386": "declined",
         "7607943": "declined",
-        "16821956": "open",
-        "5010991": "open",
-        "10534771": "open",
-        "16582464": "open",
-        "16582398": "open",
-        "5385331": "open",
-        "16839186": "open",
-        "15438303": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "9858614": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "16685952": "open",
-        "5569047": "open",
-        "15380065": "open",
-        "17192543": "open",
-        "12923999": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "16582426": "open",
+        "12596708": "declined",
+        "13975693": "declined",
+        "15844148": "declined",
         "5010965": "open",
+        "5010991": "open",
+        "5385331": "open",
+        "5569047": "open",
         "8038029": "open",
-        "11094215": "open"
+        "9858614": "open",
+        "10534771": "open",
+        "11094215": "open",
+        "11997558": "open",
+        "12923999": "open",
+        "14757576": "open",
+        "15380065": "open",
+        "15438303": "open",
+        "15844136": "open",
+        "16238613": "open",
+        "16582104": "open",
+        "16582236": "open",
+        "16582398": "open",
+        "16582426": "open",
+        "16582464": "open",
+        "16676136": "open",
+        "16685952": "open",
+        "16821956": "open",
+        "16839186": "open",
+        "17192543": "open",
+        "17192775": "open",
+        "17269531": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -680,44 +855,48 @@
       weekday: "Sonntag",
       dateShort: "04.10.",
       kickoff: "10:00 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
-        "8037754": "confirmed",
         "5010965": "confirmed",
-        "15844148": "declined",
-        "13975693": "declined",
-        "5107663": "declined",
+        "8037754": "confirmed",
         "5015379": "declined",
+        "5107663": "declined",
         "5202386": "declined",
-        "16821956": "open",
+        "13975693": "declined",
+        "15844148": "declined",
         "5010991": "open",
-        "10534771": "open",
-        "16582464": "open",
-        "12596708": "open",
-        "16582398": "open",
         "5385331": "open",
-        "16839186": "open",
-        "15438303": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "9858614": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "16685952": "open",
         "5569047": "open",
-        "15380065": "open",
-        "17192543": "open",
-        "12923999": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "16582426": "open",
+        "7607943": "open",
         "8038029": "open",
+        "9858614": "open",
+        "10534771": "open",
         "11094215": "open",
-        "7607943": "open"
+        "11997558": "open",
+        "12596708": "open",
+        "12923999": "open",
+        "14757576": "open",
+        "15380065": "open",
+        "15438303": "open",
+        "15844136": "open",
+        "16238613": "open",
+        "16582104": "open",
+        "16582236": "open",
+        "16582398": "open",
+        "16582426": "open",
+        "16582464": "open",
+        "16676136": "open",
+        "16685952": "open",
+        "16821956": "open",
+        "16839186": "open",
+        "17192543": "open",
+        "17192775": "open",
+        "17269531": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -730,44 +909,48 @@
       weekday: "Sonntag",
       dateShort: "11.10.",
       kickoff: "12:00 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
         "8037754": "confirmed",
-        "15844148": "declined",
-        "13975693": "declined",
         "5107663": "declined",
         "5202386": "declined",
-        "16821956": "open",
-        "5010991": "open",
-        "10534771": "open",
-        "16582464": "open",
-        "12596708": "open",
-        "16582398": "open",
-        "5385331": "open",
-        "16839186": "open",
-        "15438303": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "9858614": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "16685952": "open",
-        "5569047": "open",
-        "15380065": "open",
-        "17192543": "open",
-        "12923999": "open",
-        "5015379": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "16582426": "open",
+        "13975693": "declined",
+        "15844148": "declined",
         "5010965": "open",
+        "5010991": "open",
+        "5015379": "open",
+        "5385331": "open",
+        "5569047": "open",
+        "7607943": "open",
         "8038029": "open",
+        "9858614": "open",
+        "10534771": "open",
         "11094215": "open",
-        "7607943": "open"
+        "11997558": "open",
+        "12596708": "open",
+        "12923999": "open",
+        "14757576": "open",
+        "15380065": "open",
+        "15438303": "open",
+        "15844136": "open",
+        "16238613": "open",
+        "16582104": "open",
+        "16582236": "open",
+        "16582398": "open",
+        "16582426": "open",
+        "16582464": "open",
+        "16676136": "open",
+        "16685952": "open",
+        "16821956": "open",
+        "16839186": "open",
+        "17192543": "open",
+        "17192775": "open",
+        "17269531": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -780,44 +963,48 @@
       weekday: "Sonntag",
       dateShort: "25.10.",
       kickoff: "12:00 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
         "8037754": "confirmed",
-        "15844148": "declined",
-        "13975693": "declined",
         "5107663": "declined",
         "5202386": "declined",
-        "16821956": "open",
-        "5010991": "open",
-        "10534771": "open",
-        "16582464": "open",
-        "12596708": "open",
-        "16582398": "open",
-        "5385331": "open",
-        "16839186": "open",
-        "15438303": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "9858614": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "16685952": "open",
-        "5569047": "open",
-        "15380065": "open",
-        "17192543": "open",
-        "12923999": "open",
-        "5015379": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "16582426": "open",
+        "13975693": "declined",
+        "15844148": "declined",
         "5010965": "open",
+        "5010991": "open",
+        "5015379": "open",
+        "5385331": "open",
+        "5569047": "open",
+        "7607943": "open",
         "8038029": "open",
+        "9858614": "open",
+        "10534771": "open",
         "11094215": "open",
-        "7607943": "open"
+        "11997558": "open",
+        "12596708": "open",
+        "12923999": "open",
+        "14757576": "open",
+        "15380065": "open",
+        "15438303": "open",
+        "15844136": "open",
+        "16238613": "open",
+        "16582104": "open",
+        "16582236": "open",
+        "16582398": "open",
+        "16582426": "open",
+        "16582464": "open",
+        "16676136": "open",
+        "16685952": "open",
+        "16821956": "open",
+        "16839186": "open",
+        "17192543": "open",
+        "17192775": "open",
+        "17269531": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -830,44 +1017,48 @@
       weekday: "Samstag",
       dateShort: "31.10.",
       kickoff: "18:30 Uhr",
-      snapshotDate: "31.08.2026",
+      snapshotDate: "03.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
         "8037754": "confirmed",
-        "15844148": "declined",
-        "13975693": "declined",
         "5107663": "declined",
         "5202386": "declined",
-        "16821956": "open",
-        "5010991": "open",
-        "10534771": "open",
-        "16582464": "open",
-        "12596708": "open",
-        "16582398": "open",
-        "5385331": "open",
-        "16839186": "open",
-        "15438303": "open",
-        "16582104": "open",
-        "11997558": "open",
-        "9858614": "open",
-        "16582236": "open",
-        "15844136": "open",
-        "16685952": "open",
-        "5569047": "open",
-        "15380065": "open",
-        "17192543": "open",
-        "12923999": "open",
-        "5015379": "open",
-        "17192775": "open",
-        "16238613": "open",
-        "14757576": "open",
-        "16676136": "open",
-        "16582426": "open",
+        "13975693": "declined",
+        "15844148": "declined",
         "5010965": "open",
+        "5010991": "open",
+        "5015379": "open",
+        "5385331": "open",
+        "5569047": "open",
+        "7607943": "open",
         "8038029": "open",
+        "9858614": "open",
+        "10534771": "open",
         "11094215": "open",
-        "7607943": "open"
+        "11997558": "open",
+        "12596708": "open",
+        "12923999": "open",
+        "14757576": "open",
+        "15380065": "open",
+        "15438303": "open",
+        "15844136": "open",
+        "16238613": "open",
+        "16582104": "open",
+        "16582236": "open",
+        "16582398": "open",
+        "16582426": "open",
+        "16582464": "open",
+        "16676136": "open",
+        "16685952": "open",
+        "16821956": "open",
+        "16839186": "open",
+        "17192543": "open",
+        "17192775": "open",
+        "17269531": "open",
+        "17272512": "open"
+      
+      
       },
       notes: {},
       guests: []
@@ -911,7 +1102,9 @@
     { id: "5015379", name: "Max" },
     { id: "8038029", name: "Timo R." },
     { id: "5202386", name: "Tristan" },
-    { id: "7607943", name: "Yannic Haase" }
+    { id: "7607943", name: "Yannic Haase" },
+    { id: "17272512", name: "Leander" },
+    { id: "17269531", name: "Mathis Möllering" }
   ];
 
   var PLAYER_PHOTOS = {
@@ -940,6 +1133,187 @@
     "5202386": "data:image/jpeg;base64,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",
     "7607943": "data:image/jpeg;base64,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"
   };
+
+  // FuPa-Saisonstatistik (Saison 26/27), von
+  // https://www.fupa.net/team/tv-neuenkirchen-m2-2026-27/playerstats
+  // übernommen und den SpielerPlus-Spielern zugeordnet. Die Zuordnung
+  // erfolgt über Vor-/Spitznamen, da SpielerPlus-Profile keine Nachnamen
+  // zeigen -- bei eindeutigem Vor-/Nachnamen-Bezug ("confidence: high"),
+  // sonst niedriger. Bei "ambiguous" gibt es zwei plausible FuPa-Kandidaten
+  // ohne sichere Unterscheidung -- dort werden bewusst KEINE Zahlen
+  // angezeigt, um keine Statistik der falschen Person zuzuschreiben.
+  var PLAYER_STATS = {
+    "16821956": { fupaName: "Arne Lambrecht", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "5010991": { fupaName: "Bastian Volkmer", confidence: "high", matches: 2, goals: 0, assists: 0, mvp: 66, yellow: 1, yellowRed: 0, red: 0, subIn: 0, subOut: 1, minutes: 151 },
+    "16839186": { fupaName: "Jakob Hagemann", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 59, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 90 },
+    "15438303": { fupaName: "Jens Bergander", confidence: "high", matches: 2, goals: 0, assists: 1, mvp: 70, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 180 },
+    "8037754": { fupaName: "Justin Niemann", confidence: "high", matches: 2, goals: 0, assists: 0, mvp: 69, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 180 },
+    "16685952": { fupaName: "Lasse Rosendahl", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 59, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 90 },
+    "15844148": { fupaName: "Leonard Vossel", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 34, yellow: 0, yellowRed: 0, red: 0, subIn: 1, subOut: 0, minutes: 29 },
+    "15380065": { fupaName: "Lukas Grailach", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 34, yellow: 0, yellowRed: 0, red: 0, subIn: 1, subOut: 0, minutes: 45 },
+    "17192543": { fupaName: "Manuel Paland", confidence: "high", matches: 2, goals: 1, assists: 0, mvp: 65, yellow: 0, yellowRed: 0, red: 0, subIn: 1, subOut: 0, minutes: 135 },
+    "17192775": { fupaName: "Milo Lindenthal", confidence: "high", matches: 2, goals: 0, assists: 0, mvp: 100, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 180 },
+    "16238613": { fupaName: "Mohammad Khalil", confidence: "high", matches: 1, goals: 1, assists: 0, mvp: 40, yellow: 0, yellowRed: 0, red: 0, subIn: 1, subOut: 0, minutes: 16 },
+    "16582426": { fupaName: "Sami Berdouki", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "15844136": { fupaName: "Lasse Aring", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 39, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 1, minutes: 45 },
+    "11094215": { fupaName: "Wadim Rangnau", confidence: "high", matches: 2, goals: 0, assists: 1, mvp: 70, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 180 },
+    "10534771": { fupaName: "Hendrik Beier", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "16582398": { fupaName: "Jan Düspohl", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 42, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 90 },
+    "5385331": { fupaName: "Fabio Kombrink", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "16582104": { fupaName: "Aljoscha Kollmeyer", confidence: "medium", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "11997558": { fupaName: "Justin Korte", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "16582236": { fupaName: "Matthias Kollmeyer", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 39, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 1, minutes: 45 },
+    "5569047": { fupaName: "Simon Lindemann", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 39, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 1, minutes: 61 },
+    "14757576": { fupaName: "Paul Prekwinkel", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "16676136": { fupaName: "Robin Wolter", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "5010965": { fupaName: "Simon Otte", confidence: "high", matches: 1, goals: 0, assists: 0, mvp: 39, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 1, minutes: 74 },
+    "16582464": { fupaName: "David Horstmann", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "12596708": { fupaName: "David Bräuer", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "13975693": { fupaName: "Luca Tatar", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "5107663": { fupaName: "Marvin Röhr", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "5015379": { fupaName: "Max Klehn", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "8038029": { fupaName: "Timo Radke", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "5202386": { fupaName: "Tristan Hoffmann", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 },
+    "7607943": { fupaName: "Yannic Haase", confidence: "high", matches: 0, goals: 0, assists: 0, mvp: 0, yellow: 0, yellowRed: 0, red: 0, subIn: 0, subOut: 0, minutes: 0 }
+    // Kein FuPa-Eintrag gefunden (kein Statistik-Datensatz vorhanden):
+    // 9858614 "Kai Sanetra" (FuPa führt nur einen "Kai Tegelhütter" -- anderer
+    // Nachname, daher nicht zugeordnet), 12923999 "Marcel Torwelle" (kein
+    // FuPa-Spieler dieses Namens gefunden), 17272512 "Leander" und
+    // 17269531 "Mathis Möllering" (neu im Kader, noch nicht auf FuPa gelistet).
+  };
+
+  // Trainingsstatistik von https://www.spielerplus.de/participation
+  // (Tab "Teilnahme", nur Trainingstermine, Zeitraum 09.07.2026 bis
+  // 02.09.2026 -- 16 Termine). Direkt per SpielerPlus-Spieler-ID, daher
+  // ohne Zuordnungsunsicherheit (anders als die FuPa-Statistik oben).
+  // "rate" = Zugesagt / (Zugesagt+Abgesagt+Unsicher), "none" = Termine
+  // ohne Rückmeldung (meist vor Eintritt ins Team).
+  var TRAINING_STATS_SINCE = "09.07.2026";
+  var TRAINING_STATS = {
+    "5010991": { yes: 12, no: 2, maybe: 2, none: 0, total: 16, rate: 75 },
+    "16238613": { yes: 12, no: 0, maybe: 0, none: 4, total: 16, rate: 100 },
+    "8037754": { yes: 11, no: 3, maybe: 2, none: 0, total: 16, rate: 69 },
+    "15380065": { yes: 11, no: 5, maybe: 0, none: 0, total: 16, rate: 69 },
+    "16821956": { yes: 9, no: 4, maybe: 2, none: 1, total: 16, rate: 60 },
+    "16582398": { yes: 8, no: 7, maybe: 1, none: 0, total: 16, rate: 50 },
+    "16839186": { yes: 8, no: 5, maybe: 0, none: 3, total: 16, rate: 62 },
+    "5385331": { yes: 8, no: 8, maybe: 0, none: 0, total: 16, rate: 50 },
+    "9858614": { yes: 8, no: 8, maybe: 0, none: 0, total: 16, rate: 50 },
+    "16582426": { yes: 8, no: 6, maybe: 2, none: 0, total: 16, rate: 50 },
+    "5015379": { yes: 6, no: 8, maybe: 2, none: 0, total: 16, rate: 38 },
+    "16582104": { yes: 8, no: 6, maybe: 0, none: 2, total: 16, rate: 57 },
+    "5010965": { yes: 6, no: 10, maybe: 0, none: 0, total: 16, rate: 38 },
+    "5569047": { yes: 4, no: 10, maybe: 0, none: 2, total: 16, rate: 29 },
+    "11094215": { yes: 3, no: 5, maybe: 7, none: 1, total: 16, rate: 20 },
+    "15438303": { yes: 4, no: 9, maybe: 0, none: 3, total: 16, rate: 31 },
+    "15844136": { yes: 4, no: 10, maybe: 0, none: 2, total: 16, rate: 29 },
+    "15844148": { yes: 3, no: 6, maybe: 1, none: 6, total: 16, rate: 30 },
+    "16676136": { yes: 6, no: 10, maybe: 0, none: 0, total: 16, rate: 38 },
+    "11997558": { yes: 5, no: 9, maybe: 0, none: 2, total: 16, rate: 36 },
+    "14757576": { yes: 3, no: 12, maybe: 0, none: 1, total: 16, rate: 20 },
+    "10534771": { yes: 3, no: 11, maybe: 2, none: 0, total: 16, rate: 19 },
+    "12596708": { yes: 2, no: 10, maybe: 2, none: 2, total: 16, rate: 14 },
+    "13975693": { yes: 2, no: 13, maybe: 1, none: 0, total: 16, rate: 12 },
+    "16685952": { yes: 2, no: 7, maybe: 0, none: 7, total: 16, rate: 22 },
+    "17192775": { yes: 3, no: 0, maybe: 1, none: 12, total: 16, rate: 75 },
+    "8038029": { yes: 2, no: 13, maybe: 0, none: 1, total: 16, rate: 13 },
+    "16582236": { yes: 1, no: 15, maybe: 0, none: 0, total: 16, rate: 6 },
+    "16582464": { yes: 2, no: 13, maybe: 0, none: 1, total: 16, rate: 13 },
+    "7607943": { yes: 0, no: 16, maybe: 0, none: 0, total: 16, rate: 0 },
+    "12923999": { yes: 1, no: 2, maybe: 3, none: 10, total: 16, rate: 17 },
+    "17192543": { yes: 0, no: 1, maybe: 0, none: 15, total: 16, rate: 0 },
+    "5107663": { yes: 0, no: 16, maybe: 0, none: 0, total: 16, rate: 0 },
+    "5202386": { yes: 0, no: 16, maybe: 0, none: 0, total: 16, rate: 0 },
+    "17269531": { yes: 0, no: 1, maybe: 0, none: 15, total: 16, rate: 0 },
+    "17272512": { yes: 0, no: 1, maybe: 0, none: 15, total: 16, rate: 0 }
+  };
+
+  // Datum des letzten besuchten Trainings (Status "Zugesagt") im Zeitraum
+  // seit 09.07.2026, aus https://www.spielerplus.de/participation. null =
+  // in diesem Zeitraum kein Training mit "Zugesagt" wahrgenommen.
+  var LAST_TRAINING = {
+    "5010991": "31.08.2026", // Basti
+    "16238613": "02.09.2026", // Mohammad
+    "8037754": "31.08.2026", // Justin Niemann
+    "15380065": "02.09.2026", // Lukas
+    "16821956": "26.08.2026", // Arne
+    "16582398": "31.08.2026", // Düse
+    "16839186": "26.08.2026", // Jacob Hagemann
+    "5385331": "02.09.2026", // Fabio
+    "9858614": "02.09.2026", // Kai Sanetra
+    "16582426": "02.09.2026", // Sami
+    "5015379": "12.08.2026", // Max
+    "16582104": "02.09.2026", // Josch
+    "5010965": "26.08.2026", // Simon
+    "5569047": "31.08.2026", // Linde
+    "11094215": "17.08.2026", // Wadim
+    "15438303": "31.08.2026", // Jens
+    "15844136": "31.08.2026", // Lasse Aring
+    "15844148": "26.08.2026", // leonard
+    "16676136": "03.08.2026", // Robin Wolter
+    "11997558": "19.08.2026", // Justin K
+    "14757576": "12.08.2026", // Paul
+    "10534771": "17.08.2026", // Beier
+    "12596708": "03.08.2026", // DB12
+    "13975693": "15.07.2026", // Luca
+    "16685952": "26.08.2026", // Lasse
+    "17192775": "02.09.2026", // milo
+    "8038029": "13.07.2026", // Timo R.
+    "16582236": "09.07.2026", // Kolle
+    "16582464": "13.07.2026", // David H
+    "7607943": null, // Yannic Haase
+    "12923999": "10.08.2026", // Marcel Torwelle
+    "17192543": null, // Manuel Paland
+    "5107663": null, // Marvin Röhr
+    "5202386": null, // Tristan
+    "17269531": null, // Mathis Möllering
+    "17272512": null, // Leander
+  };
+
+  // Spiele-Teilnahmequote von https://www.spielerplus.de/participation
+  // (Tab "Teilnahme", nur Spieltermine -- 5 bereits gespielte Partien im
+  // Zeitraum 09.07.2026 bis 02.09.2026). Direkt per SpielerPlus-Spieler-ID,
+  // wie TRAINING_STATS oben.
+  var GAME_STATS = {
+    "5010991": { yes: 5, no: 0, maybe: 0, total: 5, rate: 100 },
+    "16238613": { yes: 5, no: 0, maybe: 0, total: 5, rate: 100 },
+    "8037754": { yes: 5, no: 0, maybe: 0, total: 5, rate: 100 },
+    "15380065": { yes: 4, no: 1, maybe: 0, total: 5, rate: 80 },
+    "16821956": { yes: 4, no: 1, maybe: 0, total: 5, rate: 80 },
+    "16582398": { yes: 3, no: 2, maybe: 0, total: 5, rate: 60 },
+    "16839186": { yes: 2, no: 2, maybe: 0, total: 5, rate: 50 },
+    "5385331": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "9858614": { yes: 2, no: 3, maybe: 0, total: 5, rate: 40 },
+    "16582426": { yes: 2, no: 3, maybe: 0, total: 5, rate: 40 },
+    "5015379": { yes: 2, no: 3, maybe: 0, total: 5, rate: 40 },
+    "16582104": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "5010965": { yes: 2, no: 3, maybe: 0, total: 5, rate: 40 },
+    "5569047": { yes: 3, no: 2, maybe: 0, total: 5, rate: 60 },
+    "11094215": { yes: 4, no: 0, maybe: 1, total: 5, rate: 80 },
+    "15438303": { yes: 3, no: 2, maybe: 0, total: 5, rate: 60 },
+    "15844136": { yes: 2, no: 2, maybe: 1, total: 5, rate: 40 },
+    "15844148": { yes: 3, no: 2, maybe: 0, total: 5, rate: 60 },
+    "16676136": { yes: 1, no: 3, maybe: 1, total: 5, rate: 20 },
+    "11997558": { yes: 0, no: 3, maybe: 0, total: 5, rate: 0 },
+    "14757576": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "10534771": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "12596708": { yes: 2, no: 3, maybe: 0, total: 5, rate: 40 },
+    "13975693": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "16685952": { yes: 2, no: 3, maybe: 0, total: 5, rate: 40 },
+    "17192775": { yes: 1, no: 0, maybe: 0, total: 5, rate: 100 },
+    "8038029": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "16582236": { yes: 2, no: 2, maybe: 1, total: 5, rate: 40 },
+    "16582464": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "7607943": { yes: 1, no: 4, maybe: 0, total: 5, rate: 20 },
+    "12923999": { yes: 0, no: 5, maybe: 0, total: 5, rate: 0 },
+    "17192543": { yes: 1, no: 0, maybe: 0, total: 5, rate: 100 },
+    "5107663": { yes: 0, no: 5, maybe: 0, total: 5, rate: 0 },
+    "5202386": { yes: 0, no: 5, maybe: 0, total: 5, rate: 0 },
+    "17269531": { yes: 0, no: 0, maybe: 0, total: 5, rate: 0 },
+    "17272512": { yes: 0, no: 0, maybe: 0, total: 5, rate: 0 }
+  };
+
+
 
   // Splice matched FUPA photos onto the roster (see PLAYER_PHOTOS above);
   // players without a confident name match, or without a real photo on
@@ -1152,15 +1526,14 @@
   function renderMatchPicker() {
     var el = $("matchPicker");
     if (!el) return;
-    if (MATCHES.length < 2) { el.innerHTML = ""; return; }
+    if (MATCHES.length < 2) { el.hidden = true; el.innerHTML = ""; return; }
+    el.hidden = false;
     el.innerHTML = MATCHES.map(function (m) {
-      return '<button type="button" class="match-pick-btn' + (m.id === activeMatchId ? ' active' : '') + '" data-match="' + escapeHtml(m.id) + '">' +
-        escapeHtml(m.opponent) + ' <span class="mp-date">' + escapeHtml(m.dateShort) + '</span>' +
-        '</button>';
+      return '<option value="' + escapeHtml(m.id) + '"' + (m.id === activeMatchId ? ' selected' : '') + '>' +
+        escapeHtml(m.opponent) + ' \u2013 ' + escapeHtml(m.weekday) + ' ' + escapeHtml(m.dateShort) + ' ' + escapeHtml(m.kickoff) +
+        '</option>';
     }).join("");
-    el.querySelectorAll(".match-pick-btn").forEach(function (btn) {
-      btn.onclick = function () { setActiveMatch(btn.getAttribute("data-match")); };
-    });
+    el.onchange = function () { setActiveMatch(el.value); };
   }
 
   function setActiveMatch(matchId) {
@@ -1275,12 +1648,11 @@
 
   function renderFormationPicker() {
     var f = cur().formation;
-    $("formationPicker").innerHTML = formationOrderFor(cur().squadSize).map(function (key) {
-      return '<button type="button" class="formation-btn' + (key === f ? ' active' : '') + '" data-formation="' + escapeHtml(key) + '">' + escapeHtml(key) + '</button>';
+    var el = $("formationPicker");
+    el.innerHTML = formationOrderFor(cur().squadSize).map(function (key) {
+      return '<option value="' + escapeHtml(key) + '"' + (key === f ? ' selected' : '') + '>' + escapeHtml(key) + '</option>';
     }).join("");
-    $("formationPicker").querySelectorAll(".formation-btn").forEach(function (btn) {
-      btn.onclick = function () { setFormation(btn.getAttribute("data-formation")); };
-    });
+    el.onchange = function () { setFormation(el.value); };
   }
 
   function setFormation(key) {
@@ -1337,13 +1709,35 @@
     $("pitchLines").innerHTML = html;
 
     $("pitchLines").querySelectorAll(".slot.empty").forEach(function (btn) {
-      btn.onclick = function () { openSlotFillSheet(btn.getAttribute("data-slot"), btn.getAttribute("data-code")); };
+      var slotId = btn.getAttribute("data-slot"), code = btn.getAttribute("data-code");
+      btn.onclick = function () { openSlotFillSheet(slotId, code); };
+      // Drag-and-drop target: a chip from the roster/bench, or another
+      // filled slot being repositioned, can be dropped here to fill it.
+      btn.ondragover = function (e) { e.preventDefault(); btn.classList.add("drop-hover"); };
+      btn.ondragleave = function () { btn.classList.remove("drop-hover"); };
+      btn.ondrop = function (e) {
+        e.preventDefault();
+        btn.classList.remove("drop-hover");
+        var pid = e.dataTransfer.getData("text/plain");
+        if (pid) assignSlot(slotId, pid);
+      };
     });
     $("pitchLines").querySelectorAll(".slot.filled").forEach(function (btn) {
-      btn.onclick = function () {
-        var slotId = btn.getAttribute("data-slot"), code = btn.getAttribute("data-code");
-        openFilledSlotSheet(slotId, code);
+      var slotId = btn.getAttribute("data-slot"), code = btn.getAttribute("data-code");
+      btn.onclick = function () { openFilledSlotSheet(slotId, code); };
+      // Drag-and-drop source: pick this player up to move them to a
+      // different (empty) position.
+      btn.draggable = true;
+      btn.ondragstart = function (e) {
+        var pid = cur().slots[slotId];
+        if (!pid) return;
+        e.dataTransfer.setData("text/plain", pid);
+        e.dataTransfer.effectAllowed = "move";
+        btn.classList.add("dragging");
+        // Show the picked-up player's info right away, not just once dropped.
+        openPlayerInfoSheet(pid);
       };
+      btn.ondragend = function () { btn.classList.remove("dragging"); };
     });
   }
 
@@ -1355,7 +1749,7 @@
   }
 
   function chipHtml(p) {
-    return '<button type="button" class="chip" data-id="' + p.id + '">' +
+    return '<button type="button" class="chip" data-id="' + p.id + '" draggable="true">' +
       playerIconHtml(p) + playerNameHtml(p) +
       '</button>';
   }
@@ -1381,7 +1775,18 @@
       : '<span class="empty">Noch niemand auf der Bank.</span>';
 
     document.querySelectorAll("#poolChips .chip, #benchChips .chip").forEach(function (btn) {
-      btn.onclick = function () { openPlayerAssignSheet(btn.getAttribute("data-id")); };
+      var pid = btn.getAttribute("data-id");
+      btn.onclick = function () { openPlayerAssignSheet(pid); };
+      // Drag-and-drop source: drop this chip onto an empty pitch slot to
+      // place the player there directly, without going through the sheet.
+      btn.ondragstart = function (e) {
+        e.dataTransfer.setData("text/plain", pid);
+        e.dataTransfer.effectAllowed = "move";
+        btn.classList.add("dragging");
+        // Show the picked-up player's info right away, not just once dropped.
+        openPlayerInfoSheet(pid);
+      };
+      btn.ondragend = function () { btn.classList.remove("dragging"); };
     });
   }
 
@@ -1456,6 +1861,144 @@
   $("sheetCancel").onclick = closeSheet;
   $("sheetBackdrop").onclick = closeSheet;
 
+  // ---- Spielerinfo panel: photo + a FuPa/Training tab switcher, in the
+  // dedicated .player-panel (drawer on wide screens, bottom sheet on narrow
+  // ones -- see CSS). Separate from the generic option-list sheet since it
+  // shows read-only stats rather than a pickable list. ----
+  var FUPA_STAT_ROWS = [
+    ["matches", "Spiele"], ["goals", "Tore"], ["assists", "Assists"],
+    ["mvp", "MVP-Score"], ["minutes", "Minuten"],
+    ["subIn", "Eingewechselt"], ["subOut", "Ausgewechselt"],
+    ["yellow", "Gelbe Karten"], ["yellowRed", "Gelb-Rot"], ["red", "Rote Karten"]
+  ];
+  function fupaStatHtml(p) {
+    var st = PLAYER_STATS[p.id];
+    if (p.guest) return '<div class="opt-empty">Gastspieler -- keine FuPa-Saisonstatistik verfügbar.</div>';
+    if (!st) {
+      return '<div class="opt-empty">Keine FuPa-Zuordnung gefunden für ' + escapeHtml(p.name) + '. ' +
+        'Entweder neu im Kader (noch nicht auf FuPa gelistet) oder es gibt keinen eindeutigen Namensabgleich.</div>';
+    }
+    if (st.ambiguous) {
+      return '<div class="opt-empty">Zuordnung zu FuPa nicht eindeutig -- mögliche Übereinstimmungen: ' +
+        st.candidates.map(escapeHtml).join(" oder ") + '. Zahlen werden deshalb nicht angezeigt, ' +
+        'um sie nicht versehentlich der falschen Person zuzuschreiben.</div>';
+    }
+    return '<div class="player-info-source">FuPa-Saison 26/27 · ' + escapeHtml(st.fupaName) +
+      (st.confidence === "medium" ? ' <span class="pi-unsure">(Zuordnung wahrscheinlich, nicht 100% sicher)</span>' : '') +
+      '</div>' +
+      (st.matches === 0
+        ? '<div class="opt-empty">Noch keine Saisoneinsätze erfasst.</div>'
+        : '<div class="player-info-grid">' + FUPA_STAT_ROWS.map(function (r) {
+            return '<div class="pi-row"><span class="pi-label">' + r[1] + '</span><span class="pi-val">' + st[r[0]] + '</span></div>';
+          }).join("") + '</div>');
+  }
+  function trainingStatHtml(p) {
+    if (p.guest) return '<div class="opt-empty">Gastspieler -- keine Trainings-/Spielstatistik verfügbar.</div>';
+    var st = TRAINING_STATS[p.id];
+    var gs = GAME_STATS[p.id];
+    var lastTraining = LAST_TRAINING[p.id];
+    var parts = [];
+    var rows = [["yes", "Zugesagt"], ["no", "Abgesagt"], ["maybe", "Unsicher"]];
+    if (!st) {
+      parts.push('<div class="opt-empty">Keine Trainingsdaten für ' + escapeHtml(p.name) + ' gefunden.</div>');
+    } else {
+      var responded = st.yes + st.no + st.maybe;
+      parts.push(
+        '<div class="player-info-source">SpielerPlus-Training · seit ' + escapeHtml(TRAINING_STATS_SINCE) + ' (' + st.total + ' Termine)</div>' +
+        '<div class="player-info-source">Letztes Training: <span class="pi-val" style="font-size:15px">' + (lastTraining ? escapeHtml(lastTraining) : "keins in diesem Zeitraum") + '</span></div>' +
+        (responded > 0
+          ? '<div class="player-info-source">Trainingsquote (von Rückmeldungen): <span class="pi-val" style="font-size:15px">' + st.rate + '%</span></div>'
+          : '') +
+        '<div class="player-info-grid">' + rows.map(function (r) {
+          return '<div class="pi-row"><span class="pi-label">' + r[1] + '</span><span class="pi-val">' + st[r[0]] + '</span></div>';
+        }).join("") + '</div>'
+      );
+    }
+    if (gs) {
+      var respondedG = gs.yes + gs.no + gs.maybe;
+      parts.push(
+        '<div class="player-info-source" style="margin-top:14px">Spiele (SpielerPlus) · ' + gs.total + ' bereits gespielte Partien</div>' +
+        (respondedG > 0
+          ? '<div class="player-info-source">Zusagequote: <span class="pi-val" style="font-size:15px">' + gs.rate + '%</span></div>'
+          : '') +
+        '<div class="player-info-grid">' + rows.map(function (r) {
+          return '<div class="pi-row"><span class="pi-label">' + r[1] + '</span><span class="pi-val">' + gs[r[0]] + '</span></div>';
+        }).join("") + '</div>'
+      );
+    }
+    return parts.join("");
+  }
+
+  var activePlayerPanelId = null;
+  var activePlayerPanelTab = "fupa";
+  function renderPlayerPanel() {
+    var p = findPlayer(activePlayerPanelId);
+    if (!p) return;
+    $("playerPanelPhoto").src = p.photo || BLANK_PLAYER_PHOTO;
+    $("playerPanelName").textContent = p.name + (p.guest ? " (Gast)" : "");
+    $("playerPanelSub").textContent = "Spielerinfo";
+    $("playerPanelTabs").querySelectorAll(".ppt-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-tab") === activePlayerPanelTab);
+    });
+    $("playerPanelBody").innerHTML = activePlayerPanelTab === "training" ? trainingStatHtml(p) : fupaStatHtml(p);
+  }
+  function openPlayerInfoSheet(playerId) {
+    var p = findPlayer(playerId);
+    if (!p) return;
+    activePlayerPanelId = playerId;
+    renderPlayerPanel();
+    $("playerPanelBackdrop").classList.add("open");
+    $("playerPanel").classList.add("open");
+  }
+  function renderPlayerPanelPlaceholder() {
+    activePlayerPanelId = null;
+    $("playerPanelPhoto").src = BLANK_PLAYER_PHOTO;
+    $("playerPanelName").textContent = "Kein Spieler ausgewählt";
+    $("playerPanelSub").textContent = "";
+    $("playerPanelTabs").querySelectorAll(".ppt-btn").forEach(function (btn) { btn.classList.remove("active"); });
+    $("playerPanelBody").innerHTML = '<div class="opt-empty">Wähle einen Spieler aus der Aufstellung oder dem Kader, um FuPa- und Trainingsstatistik zu sehen.</div>';
+  }
+  function closePlayerPanel() {
+    $("playerPanelBackdrop").classList.remove("open");
+    $("playerPanel").classList.remove("open");
+    // On wide screens the panel is a permanently visible column (see CSS),
+    // so "closing" it means falling back to the placeholder rather than
+    // hiding anything -- harmless on narrow screens too, since there it's
+    // off-screen anyway once .open is removed above.
+    renderPlayerPanelPlaceholder();
+  }
+  $("playerPanelClose").onclick = closePlayerPanel;
+  $("playerPanelBackdrop").onclick = closePlayerPanel;
+  $("playerPanelTabs").querySelectorAll(".ppt-btn").forEach(function (btn) {
+    btn.onclick = function () { activePlayerPanelTab = btn.getAttribute("data-tab"); renderPlayerPanel(); };
+  });
+
+  function slotIdForPlayer(playerId) {
+    var slots = cur().slots, found = null;
+    Object.keys(slots).forEach(function (sid) { if (slots[sid] === playerId) found = sid; });
+    return found;
+  }
+  // Drag-and-drop targets: drop a player (off the pitch, or off the bench)
+  // back onto "Verfügbarer Kader" or onto "Bank" to move them there. Wired
+  // once, since the containers themselves persist across re-renders even
+  // though their contents (the chips) are replaced.
+  [["poolChips", "poolCard"], ["benchChips", "benchCard"]].forEach(function (pair) {
+    var chipsId = pair[0], cardId = pair[1];
+    var el = $(chipsId), card = $(cardId);
+    el.ondragover = function (e) { e.preventDefault(); card.classList.add("drop-hover"); };
+    el.ondragleave = function () { card.classList.remove("drop-hover"); };
+    el.ondrop = function (e) {
+      e.preventDefault();
+      card.classList.remove("drop-hover");
+      var pid = e.dataTransfer.getData("text/plain");
+      if (!pid) return;
+      if (chipsId === "benchChips") { setBench(pid, true); return; }
+      var sid = slotIdForPlayer(pid);
+      if (sid) { clearSlot(sid); return; }
+      if (cur().bench[pid]) setBench(pid, false);
+    };
+  });
+
   function openSlotFillSheet(slotId, code) {
     var d = cur();
     var assigned = assignedPlayerIds();
@@ -1480,6 +2023,7 @@
     var p = findPlayer(playerId);
     if (!p) return;
     var options = [
+      { label: "Spielerinfo anzeigen", sub: "FuPa-Statistik", onSelect: function () { openPlayerInfoSheet(playerId); } },
       { label: "Auf die Bank setzen", onSelect: function () { clearSlot(slotId); setBench(playerId, true); } },
       { label: "Vom Feld nehmen", sub: "zurück in den Kader", onSelect: function () { clearSlot(slotId); } }
     ];
@@ -1491,8 +2035,11 @@
     var p = findPlayer(playerId);
     if (!p) return;
     var flat = getFormationSlots(d.formation);
-    var options = flat.filter(function (s) { return !d.slots[s.slotId]; }).map(function (s) {
-      return { label: POSITION_LABEL[s.code] + " (" + s.code + ")", onSelect: function () { assignSlot(s.slotId, playerId); } };
+    var options = [
+      { label: "Spielerinfo anzeigen", sub: "FuPa-Statistik", onSelect: function () { openPlayerInfoSheet(playerId); } }
+    ];
+    flat.filter(function (s) { return !d.slots[s.slotId]; }).forEach(function (s) {
+      options.push({ label: POSITION_LABEL[s.code] + " (" + s.code + ")", onSelect: function () { assignSlot(s.slotId, playerId); } });
     });
     if (d.bench[playerId]) {
       options.push({ label: "Zurück in den Kader", sub: "von der Bank", onSelect: function () { setBench(playerId, false); } });
@@ -1530,16 +2077,19 @@
     if (!p) return;
     var eff = playerStatus(p);
     var baked = bakedStatus(p);
-    var options = STATUS_ORDER.map(function (st) {
+    var options = [
+      { label: "Spielerinfo anzeigen", sub: "FuPa-Statistik", onSelect: function () { openPlayerInfoSheet(playerId); } }
+    ];
+    STATUS_ORDER.forEach(function (st) {
       var subBits = [];
       if (st === eff) subBits.push("aktuell");
       if (st === baked) subBits.push("SpielerPlus-Stand");
-      return {
+      options.push({
         label: STATUS_LABEL[st],
         sub: subBits.join(" · "),
         dot: STATUS_COLOR_VAR[st],
         onSelect: function () { setStatusOverride(playerId, st); }
-      };
+      });
     });
     openSheetWithOptions("Rückmeldung anpassen", p.name, options);
   }
