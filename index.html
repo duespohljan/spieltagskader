@@ -121,6 +121,70 @@
   .mode-hint { font-size: 12.5px; color: var(--ink-faint); text-align: center; margin-top: -8px; }
 
   .matchday-only.hidden { display: none; }
+  .lineup-only.hidden { display: none; }
+  .stats-view-only.hidden { display: none; }
+
+  /* ---------- Statistik ---------- */
+  .stats-legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 12px; }
+  .stats-legend .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+  .stats-legend .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .stat-row { padding: 11px 0; border-bottom: 1px dashed var(--border); }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+  .stat-row-name { font-weight: 600; font-size: 14.5px; }
+  .stat-row-open { font-size: 12px; color: var(--ink-faint); font-weight: 700; white-space: nowrap; }
+  .stat-row-open.flag { color: var(--bad); }
+  .stat-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--surface-alt); gap: 2px; }
+  .stat-seg { height: 100%; }
+  .stat-row-foot { font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+
+  /* Statistik-Unteransichten: Spieler / Top Charts / Verlauf */
+  .stats-tabs { display: flex; gap: 4px; background: var(--surface-alt); padding: 4px; border-radius: 999px; border: 1px solid var(--border); margin-bottom: 14px; }
+  .stats-tab-btn {
+    flex: 1; font-family: "Barlow Condensed"; font-weight: 700; font-size: 14px; letter-spacing: 0.01em;
+    padding: 8px 6px; border-radius: 999px; border: none; background: transparent; color: var(--ink-soft); cursor: pointer;
+  }
+  .stats-tab-btn.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+  .stats-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .stats-kpi { background: var(--surface-alt); border-radius: 12px; padding: 10px 8px; text-align: center; }
+  .stats-kpi .n { font-family: "Barlow Condensed"; font-size: 26px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stats-kpi .l { font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; font-weight: 600; }
+  .top-block { margin-bottom: 18px; }
+  .top-block:last-child { margin-bottom: 0; }
+  .top-block h3 { font-family: "Barlow"; font-size: 15px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 7px; }
+  .top-block h3 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .top-block .top-sub { font-size: 12px; color: var(--ink-faint); margin-bottom: 8px; }
+  .top-item { display: grid; grid-template-columns: 22px minmax(0, 1fr) 90px 64px; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .top-item:last-child { border-bottom: none; }
+  .top-rank { font-family: "Barlow Condensed"; font-weight: 700; font-size: 13px; color: var(--ink-faint); }
+  .top-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-bar { height: 8px; border-radius: 999px; background: var(--surface-alt); overflow: hidden; }
+  .top-bar span { display: block; height: 100%; border-radius: 999px; }
+  .top-val { font-family: "Barlow Condensed"; font-weight: 700; font-size: 14px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .top-val small { font-family: "Barlow"; font-weight: 500; font-size: 11px; color: var(--ink-faint); }
+  @media (max-width: 420px) { .top-item { grid-template-columns: 20px minmax(0, 1fr) 56px 58px; } }
+
+  .hm-hint { font-size: 12px; color: var(--ink-faint); margin: 0 0 10px; }
+  .hm-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; padding: 0 4px 4px; }
+  .hm-table { border-collapse: separate; border-spacing: 2px; }
+  .hm-table th, .hm-table td { padding: 0; }
+  .hm-table .hm-name {
+    position: sticky; left: 0; z-index: 1; background: var(--surface);
+    font-size: 12.5px; font-weight: 600; text-align: left; white-space: nowrap; padding-right: 8px;
+    max-width: 118px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hm-table .hm-col { font-family: "Barlow Condensed"; font-weight: 700; font-size: 10.5px; color: var(--ink-faint); text-align: center; line-height: 1.05; padding-bottom: 3px; }
+  .hm-table .hm-col.spiel { color: var(--accent-ink); }
+  .hm-cell { display: block; width: 18px; height: 18px; border-radius: 4px; }
+  .hm-cell.confirmed { background: var(--ok); }
+  .hm-cell.unsure { background: var(--warn); }
+  .hm-cell.declined { background: var(--bad); }
+  .hm-cell.open { background: transparent; box-shadow: inset 0 0 0 1.5px var(--muted); background-image: repeating-linear-gradient(45deg, var(--muted) 0 1.5px, transparent 1.5px 5px); }
+  .hm-cell.none { background: var(--surface-alt); }
+  .hm-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 10px; }
+  .hm-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .hm-legend .hm-cell { width: 12px; height: 12px; border-radius: 3px; }
+
 
   /* ---------- Match card ---------- */
   .match-card {
@@ -480,6 +544,9 @@
     #rosterStack { display: flex; flex-direction: column; gap: 18px; grid-area: pool; }
     #refGrid { grid-area: refgrid; grid-template-columns: 1fr; }
     footer { grid-area: footer; }
+    /* Statistik: nimmt im Statistik-Modus die Kader- und Spielfeld-Spalte ein. */
+    #statsView { grid-area: pitchsec; grid-column: 1 / 4; min-width: 0; }
+    #rosterStack.hidden, .player-panel.hidden { display: none; }
 
     /* The Spielerinfo panel becomes a permanently visible column instead of
        an overlay drawer -- position:relative (not static) so its close
@@ -526,6 +593,7 @@
   <div class="mode-toggle" id="modeToggle">
     <button type="button" class="mode-btn" data-mode="matchday">Spieltag</button>
     <button type="button" class="mode-btn" data-mode="general">Standard</button>
+    <button type="button" class="mode-btn" data-mode="stats">Statistik</button>
   </div>
   <div class="mode-hint" id="modeHint"></div>
 
@@ -535,7 +603,7 @@
 
   <div class="stats matchday-only" id="statsRow"></div>
 
-  <div class="pitch-section">
+  <div class="pitch-section lineup-only">
     <div class="section-head">
       <h2>Aufstellung</h2>
       <span class="hint">Position antippen, um einen Spieler einzusetzen</span>
@@ -562,7 +630,7 @@
     <div class="pitch-actions-status" id="pitchActionsStatus"></div>
   </div>
 
-  <div class="roster-stack" id="rosterStack">
+  <div class="roster-stack lineup-only" id="rosterStack">
     <div class="roster-card" id="poolCard">
       <h3>Verfügbarer Kader <span class="sub" id="rosterSub">– noch nicht aufgestellt</span></h3>
       <div class="chips" id="poolChips"></div>
@@ -590,7 +658,7 @@
        breakpoint), a bottom sheet on narrow ones. Lives inside .wrap so it
        can participate in the desktop grid layout. -->
   <div class="player-panel-backdrop" id="playerPanelBackdrop"></div>
-  <div class="player-panel" id="playerPanel">
+  <div class="player-panel lineup-only" id="playerPanel">
     <button type="button" class="player-panel-close" id="playerPanelClose" aria-label="Schließen">&times;</button>
     <div class="player-panel-photo-wrap"><img class="player-panel-photo" id="playerPanelPhoto" alt=""></div>
     <div class="player-panel-name" id="playerPanelName">Kein Spieler ausgewählt</div>
@@ -600,6 +668,17 @@
       <button type="button" class="ppt-btn" data-tab="training">Training</button>
     </div>
     <div class="player-panel-body" id="playerPanelBody"><div class="opt-empty">Wähle einen Spieler aus der Aufstellung oder dem Kader, um FuPa- und Trainingsstatistik zu sehen.</div></div>
+  </div>
+
+  <div class="stats-view-only" id="statsView">
+    <div class="section-head">
+      <h2>Statistik</h2>
+      <span class="hint">Rückmeldeverhalten je Spieler, aus SpielerPlus archiviert</span>
+    </div>
+    <div class="formation-picker" id="statsFilterPicker"></div>
+    <div class="roster-card">
+      <div id="statsBody"></div>
+    </div>
   </div>
 
   <footer>
@@ -634,271 +713,128 @@
   // collides with a player id) is an easy way to get that.
   var MATCHES = [
     {
-      id: "g13451655",
-      kind: "Heimspiel",
-      opponent: "Nemden",
-      address: "Zum Hainteich 10, 49326 Melle",
-      weekday: "Sonntag",
-      dateShort: "06.09.",
-      kickoff: "12:00 Uhr",
-      snapshotDate: "03.09.2026",
-      statuses: {
-        "5010965": "confirmed",
-        "5010991": "confirmed",
-        "5385331": "confirmed",
-        "5569047": "confirmed",
-        "9858614": "confirmed",
-        "10534771": "confirmed",
-        "11094215": "confirmed",
-        "15380065": "confirmed",
-        "15438303": "confirmed",
-        "15844136": "confirmed",
-        "15844148": "confirmed",
-        "16238613": "confirmed",
-        "16582398": "confirmed",
-        "16582426": "confirmed",
-        "16676136": "confirmed",
-        "16685952": "confirmed",
-        "16821956": "confirmed",
-        "17192543": "confirmed",
-        "17192775": "confirmed",
-        "5015379": "declined",
-        "5107663": "declined",
-        "5202386": "declined",
-        "7607943": "declined",
-        "8037754": "declined",
-        "8038029": "declined",
-        "11997558": "declined",
-        "12596708": "declined",
-        "13975693": "declined",
-        "14757576": "declined",
-        "16582236": "declined",
-        "16582464": "declined",
-        "17269531": "declined",
-        "12923999": "open",
-        "16582104": "open",
-        "16839186": "open",
-        "17272512": "open"
-      
-      
-      },
-      notes: {},
-      guests: []
-    },
-    {
-      id: "g13451657",
-      kind: "Auswärtsspiel",
-      opponent: "Hilter",
-      address: "",
-      weekday: "Sonntag",
-      dateShort: "13.09.",
-      kickoff: "12:30 Uhr",
-      snapshotDate: "03.09.2026",
-      // Per-player Zu-/Absage snapshot for this fixture, read from
-      // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
-      statuses: {
-        "5010991": "confirmed",
-        "5385331": "confirmed",
-        "8037754": "confirmed",
-        "9858614": "confirmed",
-        "15380065": "confirmed",
-        "5010965": "declined",
-        "5015379": "declined",
-        "5107663": "declined",
-        "5202386": "declined",
-        "7607943": "declined",
-        "12596708": "declined",
-        "13975693": "declined",
-        "15844148": "declined",
-        "5569047": "open",
-        "8038029": "open",
-        "10534771": "open",
-        "11094215": "open",
-        "11997558": "open",
-        "12923999": "open",
-        "14757576": "open",
-        "15438303": "open",
-        "15844136": "open",
-        "16238613": "open",
-        "16582104": "open",
-        "16582236": "open",
-        "16582398": "open",
-        "16582426": "open",
-        "16582464": "open",
-        "16676136": "open",
-        "16685952": "open",
-        "16821956": "open",
-        "16839186": "open",
-        "17192543": "open",
-        "17192775": "open",
-        "17269531": "open",
-        "17272512": "open"
-      
-      
-      },
-      notes: {},
-      guests: []
-    },
-    {
-      id: "g13451659",
-      kind: "Heimspiel",
-      opponent: "Westerwiede 2",
-      address: "Zum Hainteich 10, 49326 Melle",
-      weekday: "Sonntag",
-      dateShort: "20.09.",
-      kickoff: "12:00 Uhr",
-      snapshotDate: "03.09.2026",
-      // Per-player Zu-/Absage snapshot for this fixture, read from
-      // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
-      statuses: {
-        "5010991": "confirmed",
-        "8037754": "confirmed",
-        "5010965": "declined",
-        "5015379": "declined",
-        "5107663": "declined",
-        "5202386": "declined",
-        "7607943": "declined",
-        "12596708": "declined",
-        "13975693": "declined",
-        "15380065": "declined",
-        "15844148": "declined",
-        "5385331": "open",
-        "5569047": "open",
-        "8038029": "open",
-        "9858614": "open",
-        "10534771": "open",
-        "11094215": "open",
-        "11997558": "open",
-        "12923999": "open",
-        "14757576": "open",
-        "15438303": "open",
-        "15844136": "open",
-        "16238613": "open",
-        "16582104": "open",
-        "16582236": "open",
-        "16582398": "open",
-        "16582426": "open",
-        "16582464": "open",
-        "16676136": "open",
-        "16685952": "open",
-        "16821956": "open",
-        "16839186": "open",
-        "17192543": "open",
-        "17192775": "open",
-        "17269531": "open",
-        "17272512": "open"
-      
-      
-      },
-      notes: {},
-      guests: []
-    },
-    {
       id: "g13451662",
       kind: "Auswärtsspiel",
-      opponent: "Bad laer",
-      address: "",
+      opponent: "Bad Laer",
+      address: "Adresse laut SpielerPlus: Zum Hainteich 10, 49326 Melle",
       weekday: "Freitag",
       dateShort: "25.09.",
       kickoff: "19:30 Uhr",
-      snapshotDate: "03.09.2026",
+      snapshotDate: "25.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
+        "5010991": "confirmed",
+        "16582398": "confirmed",
+        "15438303": "confirmed",
         "8037754": "confirmed",
-        "5015379": "declined",
-        "5107663": "declined",
-        "5202386": "declined",
-        "7607943": "declined",
+        "16685952": "confirmed",
+        "15844148": "confirmed",
+        "5569047": "confirmed",
+        "15380065": "confirmed",
+        "17269531": "confirmed",
+        "17192775": "confirmed",
+        "16676136": "confirmed",
+        "16582426": "confirmed",
+        "5010965": "confirmed",
+        "16821956": "unsure",
+        "16582236": "unsure",
+        "15844136": "unsure",
+        "11997558": "open",
+        "16238613": "open",
+        "14757576": "open",
+        "10534771": "declined",
+        "5385331": "declined",
+        "16839186": "declined",
+        "17383479": "declined",
+        "16582104": "declined",
+        "9858614": "declined",
+        "17272512": "declined",
+        "17192543": "declined",
+        "12923999": "declined",
+        "11094215": "declined",
+        "16582464": "declined",
         "12596708": "declined",
         "13975693": "declined",
-        "15844148": "declined",
-        "5010965": "open",
-        "5010991": "open",
-        "5385331": "open",
-        "5569047": "open",
-        "8038029": "open",
-        "9858614": "open",
-        "10534771": "open",
-        "11094215": "open",
-        "11997558": "open",
-        "12923999": "open",
-        "14757576": "open",
-        "15380065": "open",
-        "15438303": "open",
-        "15844136": "open",
-        "16238613": "open",
-        "16582104": "open",
-        "16582236": "open",
-        "16582398": "open",
-        "16582426": "open",
-        "16582464": "open",
-        "16676136": "open",
-        "16685952": "open",
-        "16821956": "open",
-        "16839186": "open",
-        "17192543": "open",
-        "17192775": "open",
-        "17269531": "open",
-        "17272512": "open"
-      
-      
+        "5107663": "declined",
+        "5015379": "declined",
+        "8038029": "declined",
+        "5202386": "declined",
+        "7607943": "declined",
+        "guest_basti_spies": "confirmed",
+        "guest_ibra": "confirmed",
+        "guest_feran": "confirmed"
       },
+      // Optional per-player note (e.g. a reason for a decline), keyed like
+      // statuses above.
       notes: {},
-      guests: []
+      // Guest players ("Gastspieler") confirmed for THIS fixture only —
+      // { id, name, guest: true }. Re-set per match; ids just need to be
+      // stable and never collide with real SpielerPlus ids (a "guest_"
+      // prefix guarantees that).
+      guests: [
+        { id: "guest_basti_spies", name: "Basti Spies", guest: true },
+        { id: "guest_ibra", name: "Ibra", guest: true },
+        { id: "guest_feran", name: "Feran", guest: true }
+      ]
     },
     {
       id: "g13451663",
       kind: "Auswärtsspiel",
       opponent: "Westerwiede 1",
-      address: "",
+      address: "Adresse laut SpielerPlus: Zum Hainteich 10, 49326 Melle",
       weekday: "Sonntag",
       dateShort: "04.10.",
-      kickoff: "10:00 Uhr",
-      snapshotDate: "03.09.2026",
+      kickoff: "12:30 Uhr",
+      snapshotDate: "25.09.2026",
       // Per-player Zu-/Absage snapshot for this fixture, read from
       // SpielerPlus's Teilnehmerliste on snapshotDate: { playerId: status }.
       statuses: {
-        "5010965": "confirmed",
+        "5010991": "confirmed",
         "8037754": "confirmed",
-        "5015379": "declined",
-        "5107663": "declined",
-        "5202386": "declined",
-        "13975693": "declined",
-        "15844148": "declined",
-        "5010991": "open",
-        "5385331": "open",
-        "5569047": "open",
-        "7607943": "open",
-        "8038029": "open",
-        "9858614": "open",
-        "10534771": "open",
-        "11094215": "open",
-        "11997558": "open",
-        "12596708": "open",
-        "12923999": "open",
-        "14757576": "open",
-        "15380065": "open",
-        "15438303": "open",
-        "15844136": "open",
-        "16238613": "open",
-        "16582104": "open",
-        "16582236": "open",
-        "16582398": "open",
-        "16582426": "open",
-        "16582464": "open",
-        "16676136": "open",
-        "16685952": "open",
+        "15380065": "confirmed",
+        "5010965": "confirmed",
         "16821956": "open",
+        "10534771": "open",
+        "16582464": "open",
+        "12596708": "open",
+        "16582398": "open",
+        "5385331": "open",
         "16839186": "open",
+        "15438303": "open",
+        "17383479": "open",
+        "16582104": "open",
+        "11997558": "open",
+        "9858614": "open",
+        "16582236": "open",
+        "15844136": "open",
+        "16685952": "open",
+        "17272512": "open",
+        "5569047": "open",
         "17192543": "open",
-        "17192775": "open",
+        "12923999": "open",
         "17269531": "open",
-        "17272512": "open"
-      
-      
+        "17192775": "open",
+        "16238613": "open",
+        "14757576": "open",
+        "16676136": "open",
+        "16582426": "open",
+        "11094215": "open",
+        "7607943": "open",
+        "15844148": "declined",
+        "13975693": "declined",
+        "5107663": "declined",
+        "5015379": "declined",
+        "8038029": "declined",
+        "5202386": "declined"
       },
+      // Optional per-player note (e.g. a reason for a decline), keyed like
+      // statuses above.
       notes: {},
+      // Guest players ("Gastspieler") confirmed for THIS fixture only —
+      // { id, name, guest: true }. Re-set per match; ids just need to be
+      // stable and never collide with real SpielerPlus ids (a "guest_"
+      // prefix guarantees that).
       guests: []
     },
     {
@@ -1065,6 +1001,60 @@
     }
   ];
 
+  // ---- Statistik-Archiv ----
+  // Rückmeldeverhalten über die Zeit, getrennt nach Spiel und Training: ein
+  // Eintrag pro abgeschlossenem Termin. `type` ist "spiel" oder "training",
+  // `statuses` ist wie bei MATCHES[i].statuses eine Momentaufnahme der
+  // letzten bekannten Rückmeldung jedes Spielers zu genau diesem Termin
+  // (Spieler ohne Eintrag waren für diesen Termin nicht erfasst und zählen
+  // in der Statistik nicht mit).
+  //
+  // Befüllung: der wöchentliche Sync archiviert hier künftig jeden Termin
+  // (Spiel wie Training), sobald er in der Vergangenheit liegt und aus der
+  // aktuellen Terminliste fällt — vorher stand hier nur Platz für Spiele.
+  // HISTORY_SINCE ist rein informativ (Anzeige "seit wann erfasst wird") und
+  // bewegt sich nicht automatisch mit.
+  var HISTORY_SINCE = "04.07.2026";
+  // Rückwirkend befüllt am 25.09.2026 aus den SpielerPlus-Teilnehmerlisten
+  // (alle Spiele und Trainings 06.07.–24.09.2026; am 04./05.07. gab es keine
+  // Termine, die abgesagten Trainings am 27.07. und 15.09. sowie der
+  // Mannschaftsabend am 15.08. sind nicht enthalten).
+  // Spieler, die erst nach dem 04.07. ins Team kamen (SpielerPlus "Mitglied seit"),
+  // haben für Termine vor ihrem Beitritt keinen Eintrag – SpielerPlus führt sie dort
+  // sonst fälschlich als "noch nicht zu/abgesagt".
+  var HISTORY = [
+    { id: "t76633782", type: "training", label: "Auftakttraining", dateShort: "06.07.2026", statuses: { "5010991": "confirmed", "15438303": "open", "8037754": "confirmed", "16685952": "declined", "15844148": "open", "15380065": "declined", "16238613": "confirmed", "16582426": "declined", "15844136": "declined", "11094215": "unsure", "10534771": "declined", "16582398": "confirmed", "5385331": "confirmed", "16582104": "confirmed", "11997558": "confirmed", "9858614": "confirmed", "16582236": "declined", "5569047": "declined", "12923999": "declined", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "confirmed", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "confirmed", "8038029": "open", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76633887", type: "training", label: "Training", dateShort: "09.07.2026", statuses: { "5010991": "confirmed", "15438303": "open", "8037754": "confirmed", "16685952": "declined", "15844148": "open", "15380065": "confirmed", "16238613": "open", "16582426": "declined", "15844136": "declined", "11094215": "unsure", "10534771": "declined", "16582398": "confirmed", "5385331": "confirmed", "16582104": "confirmed", "11997558": "confirmed", "9858614": "confirmed", "16582236": "confirmed", "5569047": "confirmed", "12923999": "open", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "confirmed", "12596708": "open", "13975693": "unsure", "5107663": "declined", "5015379": "confirmed", "8038029": "confirmed", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634048", type: "training", label: "Training", dateShort: "13.07.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "open", "15438303": "confirmed", "8037754": "confirmed", "16685952": "declined", "15844148": "open", "15380065": "confirmed", "16238613": "open", "16582426": "unsure", "15844136": "open", "11094215": "unsure", "10534771": "confirmed", "16582398": "confirmed", "5385331": "declined", "16582104": "confirmed", "11997558": "confirmed", "9858614": "confirmed", "16582236": "declined", "5569047": "open", "12923999": "open", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "confirmed", "12596708": "unsure", "13975693": "confirmed", "5107663": "declined", "5015379": "confirmed", "8038029": "confirmed", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634133", type: "training", label: "Training", dateShort: "15.07.2026", statuses: { "16821956": "declined", "5010991": "confirmed", "16839186": "confirmed", "15438303": "declined", "8037754": "confirmed", "16685952": "declined", "15844148": "open", "15380065": "confirmed", "16238613": "open", "16582426": "confirmed", "15844136": "open", "11094215": "unsure", "10534771": "unsure", "16582398": "confirmed", "5385331": "confirmed", "16582104": "confirmed", "11997558": "declined", "9858614": "confirmed", "16582236": "declined", "5569047": "confirmed", "12923999": "declined", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "declined", "12596708": "unsure", "13975693": "confirmed", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "g13436881", type: "spiel", label: "Auswärtsspiel Westerhausen 2", dateShort: "19.07.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "declined", "15438303": "confirmed", "8037754": "confirmed", "16685952": "declined", "15844148": "declined", "15380065": "confirmed", "16238613": "confirmed", "16582426": "declined", "15844136": "declined", "11094215": "confirmed", "10534771": "declined", "16582398": "declined", "5385331": "declined", "16582104": "declined", "11997558": "declined", "9858614": "confirmed", "16582236": "declined", "5569047": "confirmed", "12923999": "declined", "14757576": "declined", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "confirmed", "13975693": "confirmed", "5107663": "declined", "5015379": "confirmed", "8038029": "confirmed", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634049", type: "training", label: "Training", dateShort: "20.07.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "declined", "8037754": "declined", "16685952": "open", "15844148": "open", "15380065": "declined", "16238613": "confirmed", "16582426": "confirmed", "15844136": "declined", "11094215": "open", "10534771": "unsure", "16582398": "declined", "5385331": "declined", "16582104": "confirmed", "11997558": "declined", "9858614": "confirmed", "16582236": "declined", "5569047": "declined", "12923999": "unsure", "14757576": "declined", "16676136": "confirmed", "5010965": "confirmed", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "confirmed", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634134", type: "training", label: "Training", dateShort: "22.07.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "confirmed", "8037754": "confirmed", "16685952": "open", "15844148": "open", "15380065": "confirmed", "16238613": "confirmed", "16582426": "confirmed", "15844136": "declined", "11094215": "declined", "10534771": "declined", "16582398": "declined", "5385331": "declined", "16582104": "confirmed", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "confirmed", "12923999": "open", "14757576": "declined", "16676136": "declined", "5010965": "confirmed", "16582464": "open", "12596708": "open", "13975693": "declined", "5107663": "declined", "5015379": "confirmed", "8038029": "open", "5202386": "declined", "7607943": "declined" } },
+    { id: "g13436885", type: "spiel", label: "Heimspiel Hücker Aschen 2", dateShort: "26.07.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "declined", "15438303": "declined", "8037754": "confirmed", "16685952": "confirmed", "15844148": "declined", "15380065": "declined", "16238613": "confirmed", "16582426": "confirmed", "15844136": "declined", "11094215": "confirmed", "10534771": "declined", "16582398": "confirmed", "5385331": "declined", "16582104": "confirmed", "11997558": "open", "9858614": "confirmed", "16582236": "confirmed", "5569047": "confirmed", "12923999": "declined", "14757576": "declined", "16676136": "confirmed", "5010965": "confirmed", "16582464": "confirmed", "12596708": "confirmed", "13975693": "declined", "5107663": "declined", "5015379": "confirmed", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634135", type: "training", label: "Training", dateShort: "29.07.2026", statuses: { "16821956": "confirmed", "5010991": "unsure", "16839186": "confirmed", "15438303": "open", "8037754": "confirmed", "16685952": "declined", "15844148": "open", "15380065": "declined", "16238613": "confirmed", "16582426": "confirmed", "15844136": "declined", "11094215": "confirmed", "10534771": "declined", "16582398": "declined", "5385331": "declined", "16582104": "confirmed", "11997558": "confirmed", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "open", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "declined", "12596708": "confirmed", "13975693": "declined", "5107663": "declined", "5015379": "unsure", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634051", type: "training", label: "Training", dateShort: "03.08.2026", statuses: { "16821956": "declined", "5010991": "declined", "16839186": "declined", "15438303": "declined", "8037754": "confirmed", "16685952": "open", "15844148": "declined", "15380065": "declined", "16238613": "confirmed", "16582426": "confirmed", "15844136": "declined", "11094215": "unsure", "10534771": "declined", "16582398": "confirmed", "5385331": "declined", "16582104": "confirmed", "11997558": "declined", "9858614": "confirmed", "16582236": "declined", "5569047": "declined", "12923999": "open", "14757576": "declined", "16676136": "confirmed", "5010965": "confirmed", "16582464": "declined", "12596708": "confirmed", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634136", type: "training", label: "Training", dateShort: "05.08.2026", statuses: { "16821956": "declined", "5010991": "declined", "16839186": "declined", "15438303": "declined", "8037754": "unsure", "16685952": "open", "15844148": "declined", "15380065": "declined", "16238613": "open", "16582426": "declined", "15844136": "declined", "11094215": "confirmed", "10534771": "declined", "16582398": "confirmed", "5385331": "declined", "16582104": "declined", "11997558": "open", "9858614": "confirmed", "16582236": "declined", "5569047": "declined", "12923999": "open", "14757576": "confirmed", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "unsure", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634052", type: "training", label: "Training", dateShort: "10.08.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "declined", "8037754": "confirmed", "16685952": "open", "15844148": "confirmed", "15380065": "confirmed", "16238613": "confirmed", "16582426": "unsure", "15844136": "confirmed", "11094215": "unsure", "10534771": "confirmed", "16582398": "declined", "5385331": "confirmed", "16582104": "open", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "confirmed", "14757576": "confirmed", "16676136": "declined", "5010965": "confirmed", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "confirmed", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634137", type: "training", label: "Training", dateShort: "12.08.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "open", "15438303": "declined", "8037754": "declined", "16685952": "open", "15844148": "unsure", "15380065": "declined", "16238613": "confirmed", "16582426": "declined", "15844136": "confirmed", "11094215": "unsure", "10534771": "declined", "16582398": "declined", "5385331": "confirmed", "16582104": "open", "11997558": "confirmed", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "unsure", "14757576": "confirmed", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "confirmed", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "g13784766", type: "spiel", label: "Heimspiel Bardüttingdorf 2", dateShort: "15.08.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "declined", "8037754": "confirmed", "16685952": "declined", "15844148": "confirmed", "15380065": "confirmed", "16238613": "confirmed", "16582426": "declined", "15844136": "confirmed", "11094215": "unsure", "10534771": "confirmed", "16582398": "confirmed", "5385331": "confirmed", "16582104": "declined", "11997558": "open", "9858614": "declined", "16582236": "unsure", "5569047": "declined", "12923999": "declined", "14757576": "confirmed", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "confirmed" } },
+    { id: "t76634053", type: "training", label: "Training", dateShort: "17.08.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "confirmed", "8037754": "confirmed", "16685952": "open", "15844148": "confirmed", "15380065": "confirmed", "16238613": "confirmed", "16582426": "declined", "15844136": "confirmed", "11094215": "confirmed", "10534771": "confirmed", "16582398": "confirmed", "5385331": "confirmed", "16582104": "declined", "11997558": "open", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "open", "14757576": "declined", "16676136": "declined", "5010965": "confirmed", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634138", type: "training", label: "Training", dateShort: "19.08.2026", statuses: { "16821956": "unsure", "5010991": "confirmed", "16839186": "declined", "15438303": "declined", "8037754": "confirmed", "16685952": "declined", "15844148": "declined", "15380065": "confirmed", "16238613": "confirmed", "16582426": "declined", "15844136": "declined", "11094215": "declined", "10534771": "declined", "16582398": "declined", "5385331": "confirmed", "16582104": "declined", "11997558": "confirmed", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "open", "14757576": "declined", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "g13451651", type: "spiel", label: "Heimspiel Lüstringen 4", dateShort: "23.08.2026", statuses: { "16821956": "declined", "5010991": "confirmed", "16839186": "open", "15438303": "confirmed", "8037754": "confirmed", "16685952": "declined", "15844148": "confirmed", "15380065": "confirmed", "17192543": "open", "17192775": "open", "16238613": "confirmed", "16582426": "declined", "15844136": "confirmed", "11094215": "confirmed", "10534771": "declined", "16582398": "confirmed", "5385331": "declined", "16582104": "declined", "11997558": "declined", "9858614": "declined", "16582236": "confirmed", "5569047": "confirmed", "12923999": "declined", "14757576": "declined", "16676136": "unsure", "5010965": "confirmed", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634054", type: "training", label: "Training", dateShort: "24.08.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "open", "8037754": "unsure", "16685952": "confirmed", "15844148": "declined", "15380065": "confirmed", "17192543": "open", "17192775": "confirmed", "16238613": "confirmed", "16582426": "declined", "15844136": "declined", "11094215": "declined", "10534771": "declined", "16582398": "confirmed", "5385331": "declined", "16582104": "declined", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "open", "14757576": "declined", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634139", type: "training", label: "Training", dateShort: "26.08.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "declined", "8037754": "confirmed", "16685952": "confirmed", "15844148": "confirmed", "15380065": "confirmed", "17192543": "open", "17192775": "confirmed", "16238613": "confirmed", "16582426": "confirmed", "15844136": "declined", "11094215": "declined", "10534771": "declined", "16582398": "declined", "5385331": "declined", "16582104": "declined", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "declined", "14757576": "open", "16676136": "declined", "5010965": "confirmed", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "g13451652", type: "spiel", label: "Auswärtsspiel Hankenberge", dateShort: "28.08.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "confirmed", "15438303": "confirmed", "8037754": "confirmed", "16685952": "confirmed", "15844148": "confirmed", "15380065": "confirmed", "17192543": "confirmed", "17192775": "confirmed", "16238613": "confirmed", "16582426": "confirmed", "15844136": "unsure", "11094215": "confirmed", "10534771": "declined", "16582398": "declined", "5385331": "declined", "16582104": "declined", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "declined", "14757576": "declined", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634055", type: "training", label: "Training", dateShort: "31.08.2026", statuses: { "16821956": "unsure", "5010991": "confirmed", "16839186": "declined", "15438303": "confirmed", "8037754": "confirmed", "16685952": "declined", "15844148": "declined", "15380065": "confirmed", "17192543": "declined", "17192775": "unsure", "16238613": "confirmed", "16582426": "confirmed", "15844136": "confirmed", "11094215": "declined", "10534771": "declined", "16582398": "confirmed", "5385331": "confirmed", "16582104": "declined", "11997558": "declined", "9858614": "confirmed", "16582236": "declined", "5569047": "confirmed", "12923999": "unsure", "14757576": "declined", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined" } },
+    { id: "t76634140", type: "training", label: "Training", dateShort: "02.09.2026", statuses: { "16821956": "declined", "5010991": "unsure", "16839186": "declined", "15438303": "declined", "8037754": "declined", "16685952": "declined", "15844148": "declined", "15380065": "confirmed", "17192543": "open", "17192775": "confirmed", "16238613": "confirmed", "16582426": "confirmed", "15844136": "declined", "11094215": "unsure", "10534771": "declined", "16582398": "unsure", "5385331": "confirmed", "16582104": "confirmed", "11997558": "declined", "9858614": "confirmed", "16582236": "declined", "5569047": "open", "12923999": "open", "14757576": "declined", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17272512": "declined", "17269531": "declined" } },
+    { id: "g13451655", type: "spiel", label: "Heimspiel Nemden", dateShort: "06.09.2026", statuses: { "16821956": "declined", "5010991": "confirmed", "16839186": "declined", "15438303": "confirmed", "8037754": "declined", "16685952": "confirmed", "15844148": "declined", "15380065": "confirmed", "17192543": "confirmed", "17192775": "confirmed", "16238613": "confirmed", "16582426": "declined", "15844136": "declined", "11094215": "confirmed", "10534771": "confirmed", "16582398": "confirmed", "5385331": "confirmed", "16582104": "declined", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "confirmed", "12923999": "open", "14757576": "declined", "16676136": "confirmed", "5010965": "confirmed", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17272512": "declined", "17269531": "declined" } },
+    { id: "t76634056", type: "training", label: "Training", dateShort: "08.09.2026", statuses: { "16821956": "confirmed", "5010991": "declined", "16839186": "declined", "15438303": "declined", "8037754": "declined", "16685952": "confirmed", "15844148": "declined", "15380065": "confirmed", "17192543": "declined", "17192775": "declined", "16238613": "confirmed", "16582426": "confirmed", "15844136": "unsure", "11094215": "declined", "10534771": "declined", "16582398": "declined", "5385331": "declined", "16582104": "confirmed", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "declined", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17272512": "declined", "17269531": "confirmed" } },
+    { id: "t76634141", type: "training", label: "Training", dateShort: "10.09.2026", statuses: { "16821956": "declined", "5010991": "confirmed", "16839186": "open", "15438303": "declined", "8037754": "declined", "16685952": "declined", "15844148": "unsure", "15380065": "declined", "17192543": "declined", "17192775": "declined", "16238613": "confirmed", "16582426": "declined", "15844136": "declined", "11094215": "declined", "10534771": "declined", "16582398": "confirmed", "5385331": "confirmed", "16582104": "confirmed", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "confirmed", "12923999": "declined", "14757576": "open", "16676136": "confirmed", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17272512": "declined", "17269531": "declined" } },
+    { id: "g13451657", type: "spiel", label: "Auswärtsspiel Hilter", dateShort: "13.09.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "open", "15438303": "declined", "8037754": "confirmed", "16685952": "confirmed", "15844148": "declined", "15380065": "confirmed", "17192543": "declined", "17192775": "declined", "16238613": "confirmed", "16582426": "declined", "15844136": "declined", "11094215": "confirmed", "10534771": "declined", "16582398": "confirmed", "5385331": "confirmed", "16582104": "declined", "11997558": "declined", "9858614": "confirmed", "16582236": "declined", "5569047": "confirmed", "12923999": "declined", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17272512": "declined", "17269531": "confirmed" } },
+    { id: "t76634142", type: "training", label: "Training", dateShort: "17.09.2026", statuses: { "16821956": "unsure", "5010991": "confirmed", "16839186": "open", "15438303": "declined", "8037754": "declined", "16685952": "declined", "15844148": "declined", "15380065": "declined", "17192543": "open", "17192775": "confirmed", "16238613": "open", "16582426": "confirmed", "15844136": "unsure", "11094215": "declined", "10534771": "declined", "16582398": "open", "5385331": "unsure", "16582104": "declined", "11997558": "declined", "9858614": "declined", "16582236": "declined", "5569047": "confirmed", "12923999": "open", "14757576": "open", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17383479": "confirmed", "17272512": "declined", "17269531": "confirmed" } },
+    { id: "g13451659", type: "spiel", label: "Heimspiel Westerwiede 2", dateShort: "20.09.2026", statuses: { "16821956": "declined", "5010991": "confirmed", "16839186": "declined", "15438303": "declined", "8037754": "confirmed", "16685952": "confirmed", "15844148": "declined", "15380065": "declined", "17192543": "confirmed", "17192775": "confirmed", "16238613": "open", "16582426": "confirmed", "15844136": "unsure", "11094215": "declined", "10534771": "unsure", "16582398": "declined", "5385331": "declined", "16582104": "open", "11997558": "open", "9858614": "declined", "16582236": "unsure", "5569047": "confirmed", "12923999": "declined", "14757576": "declined", "16676136": "confirmed", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17383479": "declined", "17272512": "declined", "17269531": "confirmed" } },
+    { id: "t76634058", type: "training", label: "Training", dateShort: "22.09.2026", statuses: { "16821956": "confirmed", "5010991": "confirmed", "16839186": "declined", "15438303": "declined", "8037754": "confirmed", "16685952": "confirmed", "15844148": "declined", "15380065": "confirmed", "17192543": "open", "17192775": "confirmed", "16238613": "open", "16582426": "unsure", "15844136": "open", "11094215": "unsure", "10534771": "open", "16582398": "confirmed", "5385331": "declined", "16582104": "confirmed", "11997558": "confirmed", "9858614": "declined", "16582236": "declined", "5569047": "confirmed", "12923999": "open", "14757576": "open", "16676136": "declined", "5010965": "declined", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17383479": "declined", "17272512": "declined", "17269531": "confirmed" } },
+    { id: "t76634143", type: "training", label: "Training", dateShort: "24.09.2026", statuses: { "16821956": "declined", "5010991": "confirmed", "16839186": "declined", "15438303": "declined", "8037754": "declined", "16685952": "confirmed", "15844148": "declined", "15380065": "confirmed", "17192543": "open", "17192775": "open", "16238613": "open", "16582426": "confirmed", "15844136": "declined", "11094215": "open", "10534771": "open", "16582398": "confirmed", "5385331": "declined", "16582104": "declined", "11997558": "open", "9858614": "declined", "16582236": "declined", "5569047": "declined", "12923999": "open", "14757576": "declined", "16676136": "confirmed", "5010965": "confirmed", "16582464": "declined", "12596708": "declined", "13975693": "declined", "5107663": "declined", "5015379": "declined", "8038029": "declined", "5202386": "declined", "7607943": "declined", "17383479": "declined", "17272512": "declined", "17269531": "confirmed" } }
+  ];
+
   // The regular squad. Status is never stored here — a player's response to
   // a SPECIFIC match lives in that match's own `statuses` above (see
   // MATCHES), since Zu-/Absagen differ per fixture.
@@ -1104,7 +1094,8 @@
     { id: "5202386", name: "Tristan" },
     { id: "7607943", name: "Yannic Haase" },
     { id: "17272512", name: "Leander" },
-    { id: "17269531", name: "Mathis Möllering" }
+    { id: "17269531", name: "Mathis Möllering" },
+    { id: "17383479", name: "Jonas" }
   ];
 
   var PLAYER_PHOTOS = {
@@ -1386,7 +1377,7 @@
   // lineup — so planning any given matchday (pool limited to that match's
   // confirmed/unsure players) never overwrites another match's plan or the
   // general best-XI exercise that draws from the full squad, and vice versa.
-  var activeMode = "matchday"; // "matchday" | "general"
+  var activeMode = "matchday"; // "matchday" | "general" | "stats"
   var activeMatchId = MATCHES.length ? MATCHES[0].id : null;
   var matchLineups = {}; // matchId -> { formation, slots, bench }, created lazily
   var generalData = { formation: DEFAULT_FORMATION_11, squadSize: "11", slots: {}, bench: {} };
@@ -1592,17 +1583,25 @@
     document.querySelectorAll(".matchday-only").forEach(function (el) {
       el.classList.toggle("hidden", activeMode !== "matchday");
     });
+    document.querySelectorAll(".lineup-only").forEach(function (el) {
+      el.classList.toggle("hidden", activeMode === "stats");
+    });
+    document.querySelectorAll(".stats-view-only").forEach(function (el) {
+      el.classList.toggle("hidden", activeMode !== "stats");
+    });
     var hintMatch = activeMatch();
     $("modeHint").textContent = activeMode === "matchday"
       ? (hintMatch
           ? ("Kader für " + hintMatch.kind.toLowerCase() + " gegen " + hintMatch.opponent + " – nur Zu-/Unsicher-Rückmeldungen stehen zur Auswahl.")
           : "Kein anstehendes Spiel – sobald eins in SpielerPlus steht, taucht es hier automatisch auf.")
-      : "Freie Aufstellung – der gesamte Kader steht unabhängig von Zu-/Absagen zur Auswahl.";
+      : activeMode === "general"
+      ? "Freie Aufstellung – der gesamte Kader steht unabhängig von Zu-/Absagen zur Auswahl."
+      : "Wie oft wer zu-/abgesagt oder gar nicht reagiert hat, aus den archivierten Terminen seit " + HISTORY_SINCE + ".";
     $("rosterSub").textContent = activeMode === "matchday" ? "– noch nicht aufgestellt" : "– alle Spieler, noch nicht aufgestellt";
   }
 
   function setMode(mode) {
-    if (mode !== "matchday" && mode !== "general") return;
+    if (mode !== "matchday" && mode !== "general" && mode !== "stats") return;
     if (mode === activeMode) return;
     closeSheet();
     activeMode = mode;
@@ -1611,6 +1610,7 @@
     renderFormationPicker();
     renderPitch();
     renderRoster();
+    renderStatsView();
     schedulePersist();
   }
 
@@ -1826,9 +1826,249 @@
     renderPitch();
     renderRoster();
     renderRefLists();
+    renderStatsView();
     var m = activeMatch();
     $("snapshotDate").textContent = m ? m.snapshotDate : "";
   }
+
+  // ---- Statistik: Rückmeldeverhalten je Spieler aus HISTORY ----
+  var STATS_FILTER_ORDER = ["spiel", "training", "gesamt"];
+  var STATS_FILTER_LABEL = { spiel: "Spiele", training: "Training", gesamt: "Gesamt" };
+  var statsFilter = "spiel";
+
+  // Spiele, die gerade in MATCHES stehen (auch ein bereits gespieltes, noch
+  // nicht archiviertes Spiel — der wöchentliche Sync räumt das erst beim
+  // nächsten Lauf auf), zählen für die Statistik schon jetzt als "Spiel"
+  // mit — sonst wäre die Statistik leer, bis der erste Termin ins Archiv
+  // wandert. Trainings gibt es hier nicht, die kommen ausschließlich aus
+  // HISTORY.
+  function liveMatchEvents() {
+    var archived = {};
+    HISTORY.forEach(function (h) { archived[h.id] = true; });
+    // Ein Spiel, das schon mit seiner endgültigen Teilnehmerliste im Archiv
+    // steht, zählt nur einmal (aus HISTORY), nicht zusätzlich aus MATCHES.
+    // Nur Spiele, deren Tag schon vorbei ist – bei anstehenden Spielen ist
+    // "noch nicht zu-/abgesagt" normal und darf nicht als Nichtantwort zählen.
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    return MATCHES.filter(function (m) {
+      return !archived[m.id] && eventTime(m) < today.getTime();
+    }).map(function (m) {
+      return { id: m.id, type: "spiel", label: m.kind + " " + m.opponent, dateShort: m.dateShort, statuses: m.statuses };
+    });
+  }
+
+  function historyForFilter(filter) {
+    if (filter === "training") return HISTORY.filter(function (h) { return h.type === "training"; });
+    var archived = filter === "gesamt" ? HISTORY : HISTORY.filter(function (h) { return h.type === "spiel"; });
+    return archived.concat(liveMatchEvents());
+  }
+
+  // Zählt für einen Spieler, wie oft er in den übergebenen archivierten
+  // Terminen welchen Status hatte. Termine ohne Eintrag für diesen Spieler
+  // (er war zu dem Zeitpunkt z.B. noch nicht im Kader) zählen nicht mit.
+  function playerHistoryCounts(playerId, events) {
+    var c = { confirmed: 0, unsure: 0, open: 0, declined: 0, total: 0 };
+    events.forEach(function (h) {
+      var st = h.statuses[playerId];
+      if (!st || STATUS_ORDER.indexOf(st) === -1) return;
+      c[st]++;
+      c.total++;
+    });
+    return c;
+  }
+
+  function setStatsFilter(filter) {
+    if (STATS_FILTER_ORDER.indexOf(filter) === -1 || filter === statsFilter) return;
+    statsFilter = filter;
+    renderStatsView();
+  }
+
+  function renderStatsFilterPicker() {
+    var el = $("statsFilterPicker");
+    if (!el) return;
+    el.innerHTML = STATS_FILTER_ORDER.map(function (key) {
+      return '<button type="button" class="formation-btn' + (key === statsFilter ? ' active' : '') + '" data-filter="' + key + '">' + STATS_FILTER_LABEL[key] + '</button>';
+    }).join("");
+    el.querySelectorAll(".formation-btn").forEach(function (btn) {
+      btn.onclick = function () { setStatsFilter(btn.getAttribute("data-filter")); };
+    });
+  }
+
+  function statRowHtml(p, c) {
+    var segs = STATUS_ORDER.map(function (st) {
+      var pct = c.total ? (c[st] / c.total * 100) : 0;
+      return pct > 0 ? '<span class="stat-seg" style="width:' + pct.toFixed(1) + '%;background:var(' + STATUS_COLOR_VAR[st] + ')"></span>' : '';
+    }).join("");
+    return '<div class="stat-row">' +
+      '<div class="stat-row-head">' +
+        '<span class="stat-row-name">' + playerNameHtml(p) + '</span>' +
+        '<span class="stat-row-open' + (c.open > 0 ? ' flag' : '') + '">' + c.open + ' × keine Rückmeldung</span>' +
+      '</div>' +
+      '<div class="stat-bar">' + segs + '</div>' +
+      '<div class="stat-row-foot">' + c.confirmed + ' zugesagt · ' + c.unsure + ' unsicher · ' + c.declined + ' abgesagt · ' + c.total + ' Termine erfasst</div>' +
+    '</div>';
+  }
+
+  // Unteransicht der Statistik: "spieler" (Liste je Spieler), "top"
+  // (Ranglisten) oder "verlauf" (Heatmap: wer hat wann wie reagiert).
+  // Bleibt beim Wechsel des Filters Spiele/Training/Gesamt erhalten.
+  var statsTab = "spieler";
+  var STATS_TAB_ORDER = ["spieler", "top", "verlauf"];
+  var STATS_TAB_LABEL = { spieler: "Spieler", top: "Top Charts", verlauf: "Verlauf" };
+
+  // "06.09.2026" oder "06.09." -> sortierbarer Zeitstempel.
+  function eventTime(e) {
+    var m = String(e.dateShort || "").match(/(\d{1,2})\.(\d{1,2})\.(\d{4})?/);
+    if (!m) return 0;
+    var y = m[3] ? +m[3] : new Date().getFullYear();
+    return new Date(y, +m[2] - 1, +m[1]).getTime();
+  }
+  function eventDay(e) {
+    var m = String(e.dateShort || "").match(/(\d{1,2})\.(\d{1,2})\./);
+    return m ? (("0" + m[1]).slice(-2) + "." + ("0" + m[2]).slice(-2) + ".") : "";
+  }
+  function pct(n, total) { return total ? Math.round(n / total * 100) : 0; }
+
+  function statsTabsHtml() {
+    return '<div class="stats-tabs" role="tablist">' + STATS_TAB_ORDER.map(function (t) {
+      return '<button type="button" role="tab" class="stats-tab-btn' + (t === statsTab ? ' active' : '') + '" data-tab="' + t + '" aria-selected="' + (t === statsTab) + '">' + STATS_TAB_LABEL[t] + '</button>';
+    }).join("") + '</div>';
+  }
+
+  function statsLegendHtml() {
+    return '<div class="stats-legend">' +
+      STATUS_ORDER.map(function (st) {
+        return '<span class="legend-item"><span class="dot" style="background:var(' + STATUS_COLOR_VAR[st] + ')"></span>' + (st === "open" ? "Keine Rückmeldung" : STATUS_LABEL[st]) + '</span>';
+      }).join("") +
+    '</div>';
+  }
+
+  function topListHtml(title, sub, dotVar, list, valueFn) {
+    return '<div class="top-block">' +
+      '<h3><span class="dot" style="background:var(' + dotVar + ')"></span>' + title + '</h3>' +
+      '<div class="top-sub">' + sub + '</div>' +
+      list.map(function (r, i) {
+        var v = valueFn(r);
+        return '<div class="top-item">' +
+          '<span class="top-rank">' + (i + 1) + '.</span>' +
+          '<span class="top-name">' + playerNameHtml(r.p) + '</span>' +
+          '<span class="top-bar"><span style="width:' + v.pct + '%;background:var(' + dotVar + ')"></span></span>' +
+          '<span class="top-val">' + v.n + ' <small>(' + v.pct + ' %)</small></span>' +
+        '</div>';
+      }).join("") +
+    '</div>';
+  }
+
+  function renderTopCharts(rows, events) {
+    var totalAnswers = 0, totalOpen = 0;
+    rows.forEach(function (r) { totalAnswers += r.c.total; totalOpen += r.c.open; });
+    var kpis = '<div class="stats-kpis">' +
+      '<div class="stats-kpi"><div class="n">' + events.length + '</div><div class="l">Termine</div></div>' +
+      '<div class="stats-kpi"><div class="n">' + totalOpen + '</div><div class="l">× keine Rückmeldung</div></div>' +
+      '<div class="stats-kpi"><div class="n">' + pct(totalAnswers - totalOpen, totalAnswers) + ' %</div><div class="l">Rückmeldequote</div></div>' +
+    '</div>';
+
+    function byRate(key) {
+      return rows.filter(function (r) { return r.c[key] > 0; }).sort(function (a, b) {
+        var d = (b.c[key] / b.c.total) - (a.c[key] / a.c.total);
+        if (d) return d;
+        if (b.c[key] !== a.c[key]) return b.c[key] - a.c[key];
+        return a.p.name.localeCompare(b.p.name, "de");
+      }).slice(0, 8);
+    }
+    function val(key) { return function (r) { return { n: r.c[key], pct: pct(r.c[key], r.c.total) }; }; }
+
+    var noAnswer = byRate("open");
+    var reliable = rows.slice().sort(function (a, b) {
+      var ra = (a.c.total - a.c.open) / a.c.total, rb = (b.c.total - b.c.open) / b.c.total;
+      if (rb !== ra) return rb - ra;
+      if (b.c.confirmed !== a.c.confirmed) return b.c.confirmed - a.c.confirmed;
+      return a.p.name.localeCompare(b.p.name, "de");
+    }).slice(0, 8);
+
+    return kpis +
+      (noAnswer.length
+        ? topListHtml("Meiste Nichtantworten", "Anteil der Termine ohne jede Rückmeldung", "--muted", noAnswer, val("open"))
+        : '<div class="top-block"><h3>Meiste Nichtantworten</h3><div class="top-sub">Alle haben auf jeden Termin reagiert.</div></div>') +
+      topListHtml("Zuverlässigste Rückmelder", "Anteil der Termine mit Zu-, Ab- oder Unsicher-Rückmeldung", "--accent-ink", reliable,
+        function (r) { return { n: r.c.total - r.c.open, pct: pct(r.c.total - r.c.open, r.c.total) }; }) +
+      topListHtml("Meiste Zusagen", "Anteil der Termine mit Zusage", "--ok", byRate("confirmed"), val("confirmed")) +
+      topListHtml("Meiste Absagen", "Anteil der Termine mit Absage", "--bad", byRate("declined"), val("declined"));
+  }
+
+  function renderHeatmap(rows, events) {
+    var evs = events.slice().sort(function (a, b) { return eventTime(a) - eventTime(b); });
+    var head = '<tr><th></th>' + evs.map(function (e) {
+      var d = eventDay(e).split(".");
+      return '<th class="hm-col ' + e.type + '" title="' + escapeHtml(e.label + " · " + e.dateShort) + '">' +
+        (e.type === "spiel" ? "S" : "T") + '<br>' + d[0] + '<br>' + d[1] + '</th>';
+    }).join("") + '</tr>';
+    var body = rows.map(function (r) {
+      return '<tr><th class="hm-name" scope="row">' + escapeHtml(r.p.name) + '</th>' + evs.map(function (e) {
+        var st = e.statuses[r.p.id];
+        var cls = STATUS_ORDER.indexOf(st) === -1 ? "none" : st;
+        var lbl = cls === "none" ? "nicht erfasst" : (st === "open" ? "keine Rückmeldung" : STATUS_LABEL[st]);
+        return '<td><span class="hm-cell ' + cls + '" title="' + escapeHtml(r.p.name + " – " + e.label + " " + e.dateShort + ": " + lbl) + '"></span></td>';
+      }).join("") + '</tr>';
+    }).join("");
+    return '<p class="hm-hint">Jede Spalte ist ein Termin (S = Spiel, T = Training), älteste links. Spieler mit den meisten Nichtantworten stehen oben. Antippen bzw. mit der Maus zeigen für Details.</p>' +
+      '<div class="hm-legend">' +
+        '<span><span class="hm-cell confirmed"></span>Zugesagt</span>' +
+        '<span><span class="hm-cell unsure"></span>Unsicher</span>' +
+        '<span><span class="hm-cell declined"></span>Abgesagt</span>' +
+        '<span><span class="hm-cell open"></span>Keine Rückmeldung</span>' +
+      '</div>' +
+      '<div class="hm-scroll"><table class="hm-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+  }
+
+  function renderStatsBody() {
+    var body = $("statsBody");
+    if (!body) return;
+    var events = historyForFilter(statsFilter);
+
+    if (!events.length) {
+      body.innerHTML = '<span class="empty">Noch keine archivierten ' + STATS_FILTER_LABEL[statsFilter] + '. Das Archiv füllt sich automatisch mit jedem wöchentlichen Sync, sobald Termine abgeschlossen sind.</span>';
+      return;
+    }
+
+    var rows = PLAYERS.map(function (p) {
+      return { p: p, c: playerHistoryCounts(p.id, events) };
+    }).filter(function (r) { return r.c.total > 0; });
+
+    if (!rows.length) {
+      body.innerHTML = '<span class="empty">Keine Daten für aktuelle Spieler in diesem Zeitraum.</span>';
+      return;
+    }
+
+    // Wer am häufigsten gar nicht reagiert hat, steht oben — das ist der
+    // Fall, den diese Ansicht in erster Linie sichtbar machen soll.
+    rows.sort(function (a, b) {
+      if (b.c.open !== a.c.open) return b.c.open - a.c.open;
+      return a.p.name.localeCompare(b.p.name, "de");
+    });
+
+    var content;
+    if (statsTab === "top") content = renderTopCharts(rows, events);
+    else if (statsTab === "verlauf") content = renderHeatmap(rows, events);
+    else content = statsLegendHtml() + rows.map(function (r) { return statRowHtml(r.p, r.c); }).join("");
+
+    body.innerHTML = statsTabsHtml() + content;
+    body.querySelectorAll(".stats-tab-btn").forEach(function (btn) {
+      btn.onclick = function () {
+        var t = btn.getAttribute("data-tab");
+        if (t === statsTab) return;
+        statsTab = t;
+        renderStatsBody();
+      };
+    });
+  }
+
+  function renderStatsView() {
+    if (!$("statsView")) return;
+    renderStatsFilterPicker();
+    renderStatsBody();
+  }
+
 
   // ---- bottom sheet: one generic sheet, content built per context ----
   function openSheetWithOptions(title, name, options) {
@@ -2613,7 +2853,11 @@
     return clean;
   }
 
-  var lastKnownMatchInfoSavedAt = 0;
+  // Stand der in dieser Datei hinterlegten Spiele (SpielerPlus, 25.09.2026).
+  // Ältere Spielinfos aus der Datenbank werden ignoriert, damit ein veralteter
+  // Stand die aktuellen Zu-/Absagen nicht überschreibt; neuere gewinnen.
+  var MATCHES_BAKED_AT = new Date(2026, 8, 25, 12, 0).getTime();
+  var lastKnownMatchInfoSavedAt = MATCHES_BAKED_AT;
 
   // Replaces the local MATCHES array wholesale with the shared Firebase
   // snapshot once one exists — the weekly automated update always writes
@@ -2623,6 +2867,7 @@
   // file keeps showing instead.
   function applyMatchInfo(loaded) {
     if (!loaded || typeof loaded !== "object") return;
+    if (!(typeof loaded.savedAt === "number" && loaded.savedAt >= MATCHES_BAKED_AT)) return;
     var clean = sanitizeMatches(loaded.matches);
     if (!clean || !clean.length) return;
     MATCHES = clean;
@@ -2693,7 +2938,7 @@
         matchLineups[m.id] = sanitizeModeData((loaded.matchLineups || {})[m.id], m.id);
         matchStatusOverrides[m.id] = sanitizeStatusOverridesForMatch((loaded.matchStatusOverrides || {})[m.id], m.id);
       });
-      activeMode = loaded.mode === "general" ? "general" : "matchday";
+      activeMode = (loaded.mode === "general" || loaded.mode === "stats") ? loaded.mode : "matchday";
       if (loaded.activeMatchId && findMatch(loaded.activeMatchId)) activeMatchId = loaded.activeMatchId;
     } else if (loaded.matchday || loaded.slots) {
       // legacy single-match format from before multi-match support existed
