@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbeitsplatzexperte – Lerntool</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--text:#1d2433;--muted:#667085;--pri:#2f5bea;--ok:#12a150;--bad:#d92d20;--warn:#f79009;--line:#e4e7ec}
+@media(prefers-color-scheme:dark){:root{--bg:#10131a;--card:#1a1f2b;--text:#e8ecf4;--muted:#98a2b3;--line:#2b3242;--pri:#6d8cff}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:8px 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 14px}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1}
+label{display:block;font-weight:600;margin:10px 0 4px}
+select,textarea,input[type=number]{width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+textarea{min-height:110px;resize:vertical}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px}
+.opt.sel{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri) inset}
+.opt.ok{background:rgba(18,161,80,.15);border-color:var(--ok)}
+.opt.bad{background:rgba(217,45,32,.15);border-color:var(--bad)}
+.bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 14px}
+.bar>div{height:100%;background:var(--pri);transition:width .2s}
+.tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-right:6px}
+.expl{margin-top:12px;padding:12px;border-left:4px solid var(--pri);background:var(--bg);border-radius:6px}
+.big{font-size:2.4rem;font-weight:700}
+.muted{color:var(--muted)}
+.hide{display:none}
+ul{padding-left:20px;margin:6px 0}
+.stat{display:flex;gap:10px;flex-wrap:wrap}.stat div{flex:1;min-width:110px;text-align:center;padding:10px;border:1px solid var(--line);border-radius:10px}
+.stat b{display:block;font-size:1.4rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎓 Arbeitsplatzexperte – Lerntool</h1>
+  <p class="sub">Multiple Choice &amp; offene Fragen · Fortschritt wird im Browser gespeichert</p>
+
+  <!-- START -->
+  <div id="start" class="card">
+    <label for="mode">Modus</label>
+    <select id="mode">
+      <option value="mc">Multiple Choice</option>
+      <option value="open">Offene Fragen (selbst bewerten)</option>
+      <option value="mix" selected>Mix aus beidem</option>
+      <option value="wrong">Nur Fragen, die ich noch nicht kann</option>
+    </select>
+    <label for="cat">Themenbereich</label>
+    <select id="cat"></select>
+    <label for="num">Anzahl Fragen</label>
+    <input type="number" id="num" min="1" value="20">
+    <div class="row" style="margin-top:16px">
+      <button class="pri grow" id="go">Los geht's</button>
+    </div>
+    <p class="muted" id="stats" style="margin-top:14px"></p>
+    <details style="margin-top:10px">
+      <summary>Eigene Fragen hinzufügen / Daten verwalten</summary>
+      <p class="muted">Du kannst deine Unterlagen in ChatGPT/Claude in dieses JSON-Format umwandeln lassen und hier einfügen:</p>
+      <pre style="white-space:pre-wrap;font-size:.8rem;background:var(--bg);padding:10px;border-radius:8px">[
+ {"type":"mc","cat":"Thema","q":"Frage?","opts":["A","B","C","D"],"a":[1],"expl":"Erklärung"},
+ {"type":"open","cat":"Thema","q":"Frage?","a":"Musterantwort","keys":["Stichwort1","Stichwort2"]}
+]</pre>
+      <textarea id="imp" placeholder="JSON hier einfügen…"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="impBtn">Importieren</button>
+        <button id="resetCustom">Eigene Fragen löschen</button>
+        <button id="resetProg">Fortschritt zurücksetzen</button>
+      </div>
+      <p id="impMsg" class="muted"></p>
+    </details>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz" class="card hide">
+    <div class="row"><span id="prog" class="muted grow"></span><button id="quit">Beenden</button></div>
+    <div class="bar"><div id="barIn" style="width:0"></div></div>
+    <div id="qbox"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result" class="card hide"></div>
+</div>
+
+<script>
+/* ===================== FRAGEN ===================== */
+/* type mc: a = Array richtiger Indizes (Mehrfachauswahl möglich) | type open: a = Musterantwort, keys = Stichwörter */
+const BASE = [
+// ---------- Arbeitsschutz & Recht ----------
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Welches Gesetz verpflichtet den Arbeitgeber grundsätzlich, die Arbeit so zu gestalten, dass Gefährdungen für Leben und Gesundheit möglichst vermieden werden?",opts:["Arbeitsschutzgesetz (ArbSchG)","Bürgerliches Gesetzbuch (BGB)","Handelsgesetzbuch (HGB)","Mutterschutzgesetz"],a:[0],expl:"Das ArbSchG ist das Rahmengesetz des Arbeitsschutzes. Es verpflichtet den Arbeitgeber u. a. zur Gefährdungsbeurteilung (§ 5) und zur Unterweisung (§ 12)."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Was ist eine Gefährdungsbeurteilung?",opts:["Eine Beurteilung der Leistung der Mitarbeitenden","Die systematische Ermittlung und Bewertung von Gefährdungen am Arbeitsplatz mit Ableitung von Maßnahmen","Eine Versicherungspolice","Ein Bewerbungsgespräch"],a:[1],expl:"Ablauf: Arbeitsbereiche festlegen → Gefährdungen ermitteln → beurteilen → Maßnahmen festlegen → umsetzen → Wirksamkeit prüfen → dokumentieren → fortschreiben."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Wer ist für die Durchführung der Gefährdungsbeurteilung verantwortlich?",opts:["Der Betriebsrat","Die Berufsgenossenschaft","Der Arbeitgeber","Jeder Mitarbeitende für sich allein"],a:[2],expl:"Der Arbeitgeber trägt die Verantwortung; er kann die Durchführung delegieren (z. B. an Führungskräfte, Fachkraft für Arbeitssicherheit), bleibt aber verantwortlich."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Welche Reihenfolge der Schutzmaßnahmen entspricht dem STOP-Prinzip?",opts:["Persönlich → Organisatorisch → Technisch → Substitution","Substitution → Technisch → Organisatorisch → Persönlich","Organisatorisch → Persönlich → Substitution → Technisch","Technisch → Persönlich → Substitution → Organisatorisch"],a:[1],expl:"STOP: Substitution, Technische, Organisatorische, Persönliche Schutzmaßnahmen. Grundsatz: Gefahr an der Quelle bekämpfen."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Wie oft muss eine Unterweisung der Beschäftigten mindestens erfolgen?",opts:["Einmalig bei Einstellung","Mindestens einmal jährlich bzw. bei Änderungen/neuen Gefährdungen","Alle 10 Jahre","Nur auf Verlangen der Beschäftigten"],a:[1],expl:"Unterweisungen erfolgen vor Aufnahme der Tätigkeit, bei Veränderungen im Aufgabenbereich und danach regelmäßig, i. d. R. mindestens jährlich, und sind zu dokumentieren."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Welche Verordnung regelt u. a. Raumabmessungen, Beleuchtung, Raumtemperatur und Sanitärräume am Arbeitsplatz?",opts:["Arbeitsstättenverordnung (ArbStättV)","Gefahrstoffverordnung","Betriebssicherheitsverordnung","Lastenhandhabungsverordnung"],a:[0],expl:"Die ArbStättV konkretisiert das ArbSchG für Arbeitsstätten. Details stehen in den Technischen Regeln für Arbeitsstätten (ASR)."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Welche Aufgaben hat die Fachkraft für Arbeitssicherheit?",opts:["Sie führt Gehaltsverhandlungen","Sie berät den Arbeitgeber und die Beschäftigten in Fragen des Arbeitsschutzes und der Unfallverhütung","Sie ersetzt die Geschäftsführung","Sie kontrolliert nur die Pausenzeiten"],a:[1],expl:"Rechtsgrundlage ist das Arbeitssicherheitsgesetz (ASiG). Die Fachkraft berät, unterstützt und wirkt auf Verbesserungen hin – die Verantwortung bleibt beim Arbeitgeber."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Welche Aussagen zur gesetzlichen Unfallversicherung (Berufsgenossenschaft/Unfallkasse) sind richtig?",opts:["Sie versichert Arbeitsunfälle, Wegeunfälle und Berufskrankheiten","Die Beiträge zahlt allein der Arbeitnehmer","Sie übernimmt Heilbehandlung und Rehabilitation","Sie ist freiwillig für Beschäftigte"],a:[0,2],expl:"Die Beiträge zahlt allein der Arbeitgeber; die Versicherung ist für Beschäftigte Pflicht. Prävention hat Vorrang: „Prävention vor Rehabilitation vor Rente“."},
+{type:"mc",cat:"Arbeitsschutz & Recht",q:"Was gilt als Wegeunfall?",opts:["Unfall während der Mittagspause im Restaurant","Unfall auf dem direkten Weg zwischen Wohnung und Arbeitsstätte","Unfall im Urlaub","Unfall beim privaten Einkauf nach der Arbeit"],a:[1],expl:"Der unmittelbare Weg zur oder von der Arbeit ist gesetzlich unfallversichert. Private Umwege/Erledigungen sind in der Regel nicht versichert."},
+{type:"open",cat:"Arbeitsschutz & Recht",q:"Nenne die Schritte einer Gefährdungsbeurteilung.",a:"1. Arbeitsbereiche und Tätigkeiten festlegen, 2. Gefährdungen ermitteln, 3. Gefährdungen beurteilen, 4. Maßnahmen festlegen, 5. Maßnahmen durchführen, 6. Wirksamkeit überprüfen, 7. Ergebnisse dokumentieren, 8. Beurteilung fortschreiben.",keys:["ermitteln","beurteilen","Maßnahmen","Wirksamkeit","dokumentieren","fortschreiben"]},
+{type:"open",cat:"Arbeitsschutz & Recht",q:"Welche Pflichten haben Beschäftigte im Arbeitsschutz?",a:"Sie müssen Anweisungen des Arbeitgebers befolgen, Schutzausrüstung bestimmungsgemäß benutzen, Gefahren und Mängel melden, sich nicht selbst oder andere gefährden und den Arbeitgeber bei der Umsetzung des Arbeitsschutzes unterstützen (§§ 15, 16 ArbSchG).",keys:["Anweisungen","Schutzausrüstung","melden","unterstützen"]},
+
+// ---------- Ergonomie & Bildschirmarbeit ----------
+{type:"mc",cat:"Ergonomie & Bildschirmarbeit",q:"Was bedeutet Ergonomie?",opts:["Die Anpassung der Arbeit an den Menschen","Die Anpassung des Menschen an die Maschine","Die Kostenoptimierung von Büromöbeln","Die Lehre von der Buchhaltung"],a:[0],expl:"Ergonomie = Gestaltung von Arbeitsbedingungen, Arbeitsmitteln und Abläufen nach den Fähigkeiten und Grenzen des Menschen."},
+{type:"mc",cat:"Ergonomie & Bildschirmarbeit",q:"Wie sollte der Monitor idealerweise positioniert sein?",opts:["Oberkante des Bildschirms etwa auf oder leicht unter Augenhöhe, Blickrichtung parallel zum Fenster","Weit über Kopfhöhe","Direkt vor dem Fenster, mit Blick zum Fenster","Auf dem Boden"],a:[0],expl:"Der Monitor steht seitlich zum Fenster (Blickrichtung parallel), um Blendung und Reflexionen zu vermeiden. Der Blick geht leicht nach unten."},
+{type:"mc",cat:"Ergonomie & Bildschirmarbeit",q:"Welcher Sehabstand zum Bildschirm wird in der Regel empfohlen?",opts:["ca. 10–20 cm","ca. 50–80 cm","ca. 3 m","ca. 1,5 m"],a:[1],expl:"Üblich sind 50–80 cm, abhängig von Bildschirmgröße, Schriftgröße und Sehvermögen."},
+{type:"mc",cat:"Ergonomie & Bildschirmarbeit",q:"Wie sollte die Sitzhaltung am Bildschirmarbeitsplatz sein?",opts:["Oberschenkel und Unterschenkel etwa im 90°-Winkel (offener Winkel ist besser), Füße flach auf dem Boden","Beine fest überkreuzt","Rücken völlig rund","Füße hängen frei in der Luft"],a:[0],expl:"Dynamisches Sitzen mit häufigem Wechsel der Haltung ist besser als starres „gerades Sitzen“. Lehne nutzen, Rücken abstützen."},
+{type:"mc",cat:"Ergonomie & Bildschirmarbeit",q:"Welche Maßnahmen beugen Beschwerden bei Bildschirmarbeit vor?",opts:["Regelmäßige kurze Pausen und Haltungswechsel","Dauerhaft in einer Haltung verharren","Wechsel zwischen Sitzen, Stehen und Gehen","Bildschirm ohne Pause fixieren"],a:[0,2],expl:"Abwechslung ist der Schlüssel: Sitz-Steh-Dynamik, Mischarbeit, kurze Pausen, Augenübungen (20-20-20-Regel: alle 20 Min. 20 Sek. auf 20 Fuß ≈ 6 m schauen)."},
+{type:"mc",cat:"Ergonomie & Bildschirmarbeit",q:"Welche Höhe hat eine ergonomische Tischhöhe bei Sitzarbeit?",opts:["Der Tisch ist so hoch, dass die Unterarme locker waagerecht aufliegen und die Schultern entspannt bleiben","Grundsätzlich 1,20 m","Grundsätzlich 40 cm","Höhe ist egal"],a:[0],expl:"Höhenverstellbare Tische (üblich ca. 65–125 cm) ermöglichen die individuelle Anpassung und den Wechsel zwischen Sitzen und Stehen."},
+{type:"mc",cat:"Ergonomie & Bildschirmarbeit",q:"Wozu dient die Arbeitsmedizinische Vorsorge bei Bildschirmarbeit?",opts:["Sie soll Beschwerden früh erkennen und beraten (z. B. Angebotsvorsorge für Augen/Sehen)","Sie ersetzt die Gefährdungsbeurteilung","Sie dient der Kündigungsvorbereitung","Sie ist nur für Führungskräfte"],a:[0],expl:"Nach ArbMedVV muss der Arbeitgeber bei Tätigkeiten an Bildschirmgeräten eine Angebotsvorsorge anbieten. Ergebnisse gehen nicht an den Arbeitgeber (Schweigepflicht)."},
+{type:"open",cat:"Ergonomie & Bildschirmarbeit",q:"Beschreibe einen ergonomisch gestalteten Bildschirmarbeitsplatz.",a:"Höhenverstellbarer Tisch und Stuhl mit Rückenlehne, Monitor in 50–80 cm Abstand, Oberkante auf/unter Augenhöhe, seitlich zum Fenster, blend- und reflexionsfrei, Tastatur und Maus so, dass Unterarme entspannt aufliegen, ausreichend Beinfreiheit, gute Beleuchtung, Wechsel von Sitzen/Stehen, regelmäßige Pausen.",keys:["höhenverstellbar","Abstand","Augenhöhe","blendfrei","Beinfreiheit","Pausen"]},
+{type:"open",cat:"Ergonomie & Bildschirmarbeit",q:"Warum ist Bewegungsmangel bei der Büroarbeit problematisch und was kann man tun?",a:"Langes Sitzen belastet Rücken, Nacken und Gelenke, schwächt Muskulatur und Kreislauf und erhöht Risiken für Herz-Kreislauf- und Stoffwechselerkrankungen. Gegenmaßnahmen: Haltungswechsel, Steharbeit, Bewegungspausen, Treppen statt Aufzug, Gymnastik, Telefonate im Stehen/Gehen.",keys:["Rücken","Haltungswechsel","Pausen","Bewegung"]},
+
+// ---------- Licht, Klima, Lärm ----------
+{type:"mc",cat:"Licht, Klima & Lärm",q:"Welche Beleuchtungsstärke wird für Büroarbeitsplätze nach ASR A3.4 mindestens gefordert?",opts:["100 lx","300 lx","500 lx","2000 lx"],a:[2],expl:"Büroarbeit: 500 lx als Wartungswert (Bildschirmarbeit, Schreiben, Lesen). Je nach Sehaufgabe können höhere Werte nötig sein."},
+{type:"mc",cat:"Licht, Klima & Lärm",q:"Welche Raumtemperatur gilt nach ASR A3.5 bei überwiegend sitzender, leichter Tätigkeit als Mindestwert?",opts:["12 °C","17 °C","20 °C","26 °C"],a:[2],expl:"Mindestwerte: 20 °C bei leichter sitzender Tätigkeit, 19 °C bei leichter/überwiegend stehender oder gehender, 17 °C bei mittelschwerer, 12 °C bei schwerer Arbeit. Maximal sollen 26 °C nicht überschritten werden."},
+{type:"mc",cat:"Licht, Klima & Lärm",q:"Welche Störgröße ist bei Beleuchtung am Bildschirm besonders wichtig zu vermeiden?",opts:["Blendung und Reflexionen","Farbige Wände","Zu leise Umgebung","Zimmerpflanzen"],a:[0],expl:"Direkt- und Reflexblendung führen zu Augenbelastung, Kopfschmerzen und Ermüdung. Abhilfe: Jalousien, Position des Monitors, geeignete Leuchten."},
+{type:"mc",cat:"Licht, Klima & Lärm",q:"Ab welchem Dauerschallpegel (Lärmbereich) können nach LärmVibrationsArbSchV Gehörschutz-Pflichten greifen?",opts:["Ab 40 dB(A)","Ab 70 dB(A)","Ab 80 dB(A) Gehörschutz zur Verfügung stellen, ab 85 dB(A) tragen","Ab 120 dB(A)"],a:[2],expl:"Untere Auslösewerte: 80 dB(A) (Gehörschutz zur Verfügung stellen), obere: 85 dB(A) (Tragepflicht, Lärmbereich kennzeichnen)."},
+{type:"mc",cat:"Licht, Klima & Lärm",q:"Welcher Schallpegel gilt bei überwiegend geistiger Tätigkeit als Orientierungswert (Büro)?",opts:["Max. ca. 55 dB(A) bei überwiegend geistigen Tätigkeiten","Max. 85 dB(A)","Max. 100 dB(A)","Max. 20 dB(A)"],a:[0],expl:"Für überwiegend geistige Tätigkeiten gilt ca. 55 dB(A), für einfache oder überwiegend mechanisierte Bürotätigkeiten ca. 70 dB(A)."},
+{type:"open",cat:"Licht, Klima & Lärm",q:"Welche Faktoren beeinflussen das Raumklima?",a:"Lufttemperatur, Luftfeuchtigkeit, Luftgeschwindigkeit (Zugluft), Wärmestrahlung, Luftqualität/Luftwechsel (CO₂), außerdem Kleidung und Arbeitsschwere.",keys:["Temperatur","Luftfeuchte","Luftbewegung","Zugluft","Luftqualität"]},
+
+// ---------- Brandschutz & Erste Hilfe ----------
+{type:"mc",cat:"Brandschutz & Erste Hilfe",q:"Welche drei Voraussetzungen müssen für einen Brand erfüllt sein (Verbrennungsdreieck)?",opts:["Brennbarer Stoff, Sauerstoff, Zündquelle","Wasser, Feuer, Luft","Holz, Papier, Strom","Rauch, Hitze, Flamme"],a:[0],expl:"Entfernt man eine der drei Komponenten, erlischt das Feuer (Löscheffekte: Abkühlen, Ersticken, Entzug des brennbaren Stoffs)."},
+{type:"mc",cat:"Brandschutz & Erste Hilfe",q:"Was ist bei einem Brand die richtige Reihenfolge der Maßnahmen?",opts:["Menschen retten → Notruf 112 → Löschversuch","Löschversuch → Daten sichern → Notruf","Notruf → Mittagessen → Löschen","Nur Türen schließen und gehen"],a:[0],expl:"Gängig: Menschenrettung, Alarmieren (112), Löschversuch unternehmen – ohne sich selbst zu gefährden. Merkspruch: „Retten – Alarmieren – Löschen“."},
+{type:"mc",cat:"Brandschutz & Erste Hilfe",q:"Wie ist ein Rettungszeichen gestaltet?",opts:["Grün mit weißem Piktogramm","Rot mit weißem Piktogramm","Blau mit weißem Symbol","Gelb mit schwarzem Rand"],a:[0],expl:"Grün = Rettung/Erste Hilfe. Rot = Verbot/Brandschutz, Blau = Gebot, Gelb = Warnung."},
+{type:"mc",cat:"Brandschutz & Erste Hilfe",q:"Welche Notrufnummer gilt europaweit?",opts:["110","112","116","19222"],a:[1],expl:"112 = europaweiter Notruf (Feuerwehr/Rettungsdienst). 110 = Polizei."},
+{type:"mc",cat:"Brandschutz & Erste Hilfe",q:"Die 5 W-Fragen beim Notruf lauten:",opts:["Wo, Was, Wie viele, Welche Art, Warten auf Rückfragen","Wer, Wann, Weshalb, Wohin, Wieso","Wetter, Wind, Wasser, Wärme, Werkzeug","Wohnort, Wunsch, Wert, Wille, Wissen"],a:[0],expl:"Wo ist es passiert? Was ist passiert? Wie viele Betroffene? Welche Verletzungen/Erkrankungen? Warten auf Rückfragen!"},
+{type:"open",cat:"Brandschutz & Erste Hilfe",q:"Wie lautet die Rettungskette und woraus besteht sie?",a:"Sofortmaßnahmen am Unfallort (Absichern, Erste Hilfe), Notruf, Erweiterte Erste Hilfe durch Ersthelfer/Betriebssanitäter bis zum Eintreffen, Rettungsdienst, Weiterversorgung im Krankenhaus.",keys:["Notruf","Erste Hilfe","Rettungsdienst","Krankenhaus"]},
+
+// ---------- Psychische Belastung & Gesundheit ----------
+{type:"mc",cat:"Psychische Belastung & Gesundheit",q:"Welche Aussage zu Belastung und Beanspruchung ist richtig?",opts:["Belastung ist die objektive Einwirkung, Beanspruchung die individuelle Auswirkung darauf","Beanspruchung ist die äußere Einwirkung, Belastung die Auswirkung","Beide Begriffe sind identisch","Beanspruchung gibt es nur körperlich"],a:[0],expl:"Belastungs-Beanspruchungs-Konzept: Gleiche Belastung kann je nach Person (Fähigkeiten, Tagesform, Ressourcen) unterschiedlich stark beanspruchen."},
+{type:"mc",cat:"Psychische Belastung & Gesundheit",q:"Welche Faktoren können psychische Belastung am Arbeitsplatz verursachen?",opts:["Hoher Zeitdruck","Häufige Unterbrechungen","Unklare Aufgaben und Zuständigkeiten","Ausreichend Handlungsspielraum"],a:[0,1,2],expl:"Handlungsspielraum ist eine Ressource und wirkt schützend. Merkmalbereiche: Arbeitsinhalt/-aufgabe, Arbeitsorganisation, soziale Beziehungen, Arbeitsumgebung, neue Arbeitsformen."},
+{type:"mc",cat:"Psychische Belastung & Gesundheit",q:"Ist die Beurteilung psychischer Belastung Teil der Gefährdungsbeurteilung?",opts:["Ja, seit 2013 ausdrücklich im ArbSchG genannt (§ 5)","Nein, nur freiwillig","Nur bei Betrieben ab 10.000 Beschäftigten","Nur im öffentlichen Dienst"],a:[0],expl:"Seit 2013 stellt § 5 Abs. 3 Nr. 6 ArbSchG klar: Gefährdungen können sich auch durch psychische Belastungen bei der Arbeit ergeben."},
+{type:"mc",cat:"Psychische Belastung & Gesundheit",q:"Was ist Betriebliches Gesundheitsmanagement (BGM)?",opts:["Die systematische Gestaltung gesundheitsförderlicher Strukturen und Prozesse im Betrieb","Der Betriebsausflug","Die Gehaltsabrechnung","Die Pflicht zur Krankmeldung"],a:[0],expl:"BGM umfasst Arbeitsschutz, Betriebliches Eingliederungsmanagement (BEM) und Betriebliche Gesundheitsförderung (BGF)."},
+{type:"mc",cat:"Psychische Belastung & Gesundheit",q:"Wann muss der Arbeitgeber ein Betriebliches Eingliederungsmanagement (BEM) anbieten?",opts:["Bei Arbeitsunfähigkeit von mehr als sechs Wochen innerhalb eines Jahres","Bei jeder Krankmeldung","Nur bei Kündigung","Nie"],a:[0],expl:"§ 167 Abs. 2 SGB IX: Ununterbrochen oder wiederholt mehr als 6 Wochen innerhalb von 12 Monaten. Die Teilnahme ist für Beschäftigte freiwillig."},
+{type:"open",cat:"Psychische Belastung & Gesundheit",q:"Nenne Beispiele für Ressourcen am Arbeitsplatz, die vor Fehlbeanspruchung schützen.",a:"Handlungsspielraum, soziale Unterstützung durch Kolleginnen/Kollegen und Führungskraft, Wertschätzung, Rückmeldung, klare Aufgaben und Rollen, Qualifizierung, ausreichende Pausen, planbare Arbeitszeiten.",keys:["Handlungsspielraum","soziale Unterstützung","Wertschätzung","Pausen"]},
+
+// ---------- Arbeitszeit & Pausen ----------
+{type:"mc",cat:"Arbeitszeit & Pausen",q:"Wie viele Stunden darf die tägliche Arbeitszeit nach ArbZG grundsätzlich betragen?",opts:["8 Stunden, verlängerbar auf bis zu 10 Stunden (Ausgleich innerhalb von 6 Monaten)","12 Stunden dauerhaft","6 Stunden fix","Unbegrenzt"],a:[0],expl:"Werktägliche Höchstarbeitszeit 8 h; Verlängerung auf 10 h zulässig, wenn im Durchschnitt von 6 Kalendermonaten bzw. 24 Wochen 8 h nicht überschritten werden."},
+{type:"mc",cat:"Arbeitszeit & Pausen",q:"Wie lang muss die Ruhepause bei mehr als 6 bis 9 Stunden Arbeitszeit mindestens sein?",opts:["15 Minuten","30 Minuten","45 Minuten","60 Minuten"],a:[1],expl:"Mehr als 6 bis 9 h: 30 min. Mehr als 9 h: 45 min. Die Pausen können in Abschnitte von mindestens 15 min aufgeteilt werden."},
+{type:"mc",cat:"Arbeitszeit & Pausen",q:"Wie lang muss die ununterbrochene Ruhezeit nach Beendigung der täglichen Arbeitszeit mindestens sein?",opts:["8 Stunden","11 Stunden","14 Stunden","24 Stunden"],a:[1],expl:"Mindestens 11 Stunden ununterbrochene Ruhezeit (§ 5 ArbZG), mit Ausnahmen z. B. in Krankenhäusern."},
+{type:"mc",cat:"Arbeitszeit & Pausen",q:"Wie ist Sonn- und Feiertagsarbeit grundsätzlich geregelt?",opts:["Grundsätzlich verboten, Ausnahmen z. B. für Krankenhäuser, Gastronomie, Notdienste","Immer erlaubt","Nur für Auszubildende erlaubt","Nur mit Betriebsratsbeschluss ohne Ausnahmen"],a:[0],expl:"§ 9 ArbZG: Beschäftigung an Sonn- und Feiertagen von 0–24 Uhr verboten, mit Ausnahmen (§ 10) und Ersatzruhetag."},
+{type:"open",cat:"Arbeitszeit & Pausen",q:"Warum sind Pausen und Ruhezeiten für Gesundheit und Leistungsfähigkeit wichtig?",a:"Sie dienen der Erholung, senken Ermüdung und Fehlerrisiko, beugen Unfällen und Überlastung vor, erhalten Konzentration und Leistungsfähigkeit und schützen langfristig vor stressbedingten Erkrankungen.",keys:["Erholung","Ermüdung","Fehler","Konzentration"]},
+
+// ---------- Gefahrstoffe, Elektrik, Heben ----------
+{type:"mc",cat:"Gefahrstoffe, Elektrik & Heben",q:"Was bedeutet das GHS-Piktogramm mit einem Totenkopf?",opts:["Akute Toxizität (giftig)","Brandgefahr","Umweltgefährlich","Ätzend"],a:[0],expl:"GHS06 = Totenkopf mit gekreuzten Knochen: akute Toxizität. Flamme = entzündlich, Ätzwirkung = Ätzend, Fisch/Baum = umweltgefährlich."},
+{type:"mc",cat:"Gefahrstoffe, Elektrik & Heben",q:"Wo findet man ausführliche Informationen zu einem Gefahrstoff?",opts:["Im Sicherheitsdatenblatt (SDB)","Im Mietvertrag","In der Betriebsordnung zur Kantine","Auf dem Gehaltszettel"],a:[0],expl:"Das SDB besteht aus 16 Abschnitten (u. a. Gefahren, Erste-Hilfe-Maßnahmen, Handhabung, Lagerung, Entsorgung). Die Betriebsanweisung wird daraus abgeleitet."},
+{type:"mc",cat:"Gefahrstoffe, Elektrik & Heben",q:"Wer darf elektrische Geräte reparieren bzw. Prüfungen nach DGUV Vorschrift 3 durchführen?",opts:["Jede Person im Betrieb","Nur Elektrofachkräfte bzw. befähigte Personen","Nur die Reinigungskraft","Der Hausmeister ohne Ausbildung"],a:[1],expl:"Prüfungen ortsveränderlicher Betriebsmittel nach DGUV V3 erfolgen durch Elektrofachkräfte oder elektrotechnisch unterwiesene Personen unter Leitung einer Elektrofachkraft."},
+{type:"mc",cat:"Gefahrstoffe, Elektrik & Heben",q:"Wie sollte man schwere Lasten richtig heben?",opts:["Aus den Beinen, mit geradem Rücken, Last nah am Körper","Mit rundem Rücken und gestreckten Beinen","Ruckartig aus dem Rücken","Mit gedrehtem Oberkörper"],a:[0],expl:"Last nah am Körper, fester Stand, Rücken gerade, Kraft aus den Beinen, nicht verdrehen. Hilfsmittel und Teamlift nutzen."},
+{type:"mc",cat:"Gefahrstoffe, Elektrik & Heben",q:"Was ist bei Stolper-, Rutsch- und Sturzunfällen (SRS) die wichtigste Vorbeugung?",opts:["Ordnung, freie Verkehrswege, Kabel verlegen, Verschmutzungen sofort beseitigen","Möglichst schnell gehen","Auf dem Handy lesen","Kabel quer über den Gang legen"],a:[0],expl:"SRS-Unfälle sind die häufigsten Arbeitsunfälle. Fluchtwege und Verkehrswege freihalten, geeignetes Schuhwerk, gute Beleuchtung."},
+{type:"open",cat:"Gefahrstoffe, Elektrik & Heben",q:"Nenne typische Unfallursachen im Büro und wie man sie vermeidet.",a:"Stolpern über Kabel, Stürze von Stühlen/Leitern (statt Stuhl: Leiter benutzen), offene Schubladen, defekte Elektrogeräte, rutschige Böden, überladene Steckdosenleisten. Maßnahmen: Ordnung, Kabelkanäle, geprüfte Geräte, geeignete Aufstiegshilfen, Mängel melden.",keys:["Kabel","Leiter","Ordnung","Mängel"]},
+
+// ---------- Homeoffice & Mobile Arbeit ----------
+{type:"mc",cat:"Homeoffice & mobile Arbeit",q:"Worin unterscheidet sich Telearbeit von mobiler Arbeit?",opts:["Telearbeit: fest eingerichteter Bildschirmarbeitsplatz im Privatbereich des Beschäftigten (ArbStättV gilt), mobile Arbeit: ortsunabhängig ohne fest eingerichteten Arbeitsplatz","Kein Unterschied","Mobile Arbeit ist immer im Betrieb","Telearbeit gibt es nur im Ausland"],a:[0],expl:"Bei Telearbeit trägt der Arbeitgeber u. a. die Verantwortung für die Einrichtung und Gefährdungsbeurteilung nach ArbStättV. Bei mobiler Arbeit gilt v. a. das ArbSchG."},
+{type:"mc",cat:"Homeoffice & mobile Arbeit",q:"Gilt der gesetzliche Unfallversicherungsschutz im Homeoffice?",opts:["Ja, bei betrieblich veranlassten Tätigkeiten (seit 2021 auch auf Wegen im Haushalt, z. B. zum Drucker oder zur Toilette)","Nein, nie","Nur wenn der Chef zuschaut","Nur nach 18 Uhr"],a:[0],expl:"Seit dem Betriebsrätemodernisierungsgesetz (2021) ist der Versicherungsschutz im Homeoffice dem im Betrieb weitgehend gleichgestellt."},
+{type:"open",cat:"Homeoffice & mobile Arbeit",q:"Welche besonderen Risiken gibt es im Homeoffice?",a:"Fehlende ergonomische Ausstattung (Küchenstuhl, Laptop), Bewegungsmangel, verschwimmende Grenzen zwischen Arbeit und Privatleben (Entgrenzung), soziale Isolation, Ablenkung, Erreichbarkeitsdruck, Datenschutz- und IT-Sicherheitsrisiken.",keys:["Ergonomie","Entgrenzung","Isolation","Datenschutz"]},
+
+// ---------- Datenschutz & Ordnung ----------
+{type:"mc",cat:"Datenschutz & Organisation",q:"Was versteht man unter der „Clean-Desk-Policy“?",opts:["Der Arbeitsplatz wird nach Feierabend aufgeräumt, vertrauliche Unterlagen werden weggeschlossen","Es dürfen keine Pflanzen im Büro stehen","Der Tisch muss immer nass gewischt werden","Der Monitor wird abgebaut"],a:[0],expl:"Clean Desk schützt vertrauliche Informationen, erhöht Ordnung, Sicherheit und Übersicht."},
+{type:"mc",cat:"Datenschutz & Organisation",q:"Was ist beim Verlassen des Arbeitsplatzes mit dem PC zu tun?",opts:["Bildschirm sperren (Windows+L)","Nichts, der PC bleibt offen","Passwort an Kollegen geben","Passwort auf Zettel am Monitor notieren"],a:[0],expl:"Immer sperren, auch bei kurzer Abwesenheit. Passwörter niemals weitergeben oder offen notieren."},
+{type:"open",cat:"Datenschutz & Organisation",q:"Was sind die 5S-Regeln (5S-Methode) für Arbeitsplatzorganisation?",a:"Sortieren (Unnötiges entfernen), Systematisieren (Ordnung schaffen, alles hat seinen Platz), Säubern (sauber halten), Standardisieren (einheitliche Regeln), Selbstdisziplin (dauerhaft einhalten).",keys:["Sortieren","Systematisieren","Säubern","Standardisieren","Selbstdisziplin"]}
+];
+
+/* ===================== STATE ===================== */
+const LS_CUSTOM="ape_custom_v1", LS_PROG="ape_prog_v1";
+const $=id=>document.getElementById(id);
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let custom=load(LS_CUSTOM,[]);
+let prog=load(LS_PROG,{}); // key -> {ok:n, bad:n, last:bool}
+let ALL=[], session=null;
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const keyOf=q=>q.q.slice(0,80);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function rebuild(){
+  ALL=BASE.concat(custom).map(q=>({...q,k:keyOf(q)}));
+  const cats=[...new Set(ALL.map(q=>q.cat||"Sonstiges"))];
+  $("cat").innerHTML='<option value="">Alle Themen ('+ALL.length+' Fragen)</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+  const seen=Object.keys(prog).length, good=Object.values(prog).filter(p=>p.last).length;
+  $("stats").textContent=`Gelernt: ${good} von ${ALL.length} Fragen zuletzt richtig · ${seen} schon bearbeitet`;
+}
+
+/* ===================== QUIZ ===================== */
+$("go").onclick=()=>{
+  const mode=$("mode").value, cat=$("cat").value, n=Math.max(1,parseInt($("num").value)||20);
+  let pool=ALL.filter(q=>!cat||(q.cat||"Sonstiges")===cat);
+  if(mode==="mc")pool=pool.filter(q=>q.type==="mc");
+  if(mode==="open")pool=pool.filter(q=>q.type==="open");
+  if(mode==="wrong")pool=pool.filter(q=>!prog[q.k]||!prog[q.k].last);
+  if(!pool.length){alert("Keine passenden Fragen gefunden.");return}
+  session={qs:shuffle(pool).slice(0,n),i:0,score:0,wrong:[],done:false};
+  $("start").classList.add("hide");$("result").classList.add("hide");$("quiz").classList.remove("hide");
+  show();
+};
+$("quit").onclick=()=>{if(confirm("Quiz beenden?"))finish()};
+
+function record(q,ok){
+  const p=prog[q.k]||{ok:0,bad:0};ok?p.ok++:p.bad++;p.last=ok;prog[q.k]=p;save(LS_PROG,prog);
+  if(ok)session.score++;else session.wrong.push(q);
+}
+
+function show(){
+  const s=session,q=s.qs[s.i];
+  $("prog").textContent=`Frage ${s.i+1} / ${s.qs.length} · ${s.score} richtig`;
+  $("barIn").style.width=(s.i/s.qs.length*100)+"%";
+  const head=`<div><span class="tag">${esc(q.cat||"Sonstiges")}</span><span class="tag">${q.type==="mc"?(q.a.length>1?"Mehrfachauswahl":"Multiple Choice"):"Offene Frage"}</span></div><h3>${esc(q.q)}</h3>`;
+  if(q.type==="mc") showMC(q,head); else showOpen(q,head);
+}
+
+function showMC(q,head){
+  const order=shuffle(q.opts.map((_,i)=>i)), sel=new Set(), multi=q.a.length>1;
+  const box=$("qbox");
+  box.innerHTML=head+(multi?'<p class="muted">Mehrere Antworten möglich.</p>':'')+
+    order.map(i=>`<button class="opt" data-i="${i}">${esc(q.opts[i])}</button>`).join("")+
+    '<div id="fb"></div><div class="row" style="margin-top:12px"><button class="pri" id="chk" disabled>Prüfen</button></div>';
+  const btns=[...box.querySelectorAll(".opt")], chk=$("chk");
+  btns.forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    if(multi){sel.has(i)?sel.delete(i):sel.add(i);b.classList.toggle("sel")}
+    else{sel.clear();sel.add(i);btns.forEach(x=>x.classList.remove("sel"));b.classList.add("sel")}
+    chk.disabled=!sel.size;
+  });
+  chk.onclick=()=>{
+    if(chk.dataset.done){next();return}
+    const right=new Set(q.a), ok=sel.size===right.size&&[...sel].every(i=>right.has(i));
+    btns.forEach(b=>{const i=+b.dataset.i;b.disabled=true;
+      if(right.has(i))b.classList.add("ok");else if(sel.has(i))b.classList.add("bad");b.classList.remove("sel")});
+    $("fb").innerHTML=`<div class="expl"><b>${ok?"✅ Richtig!":"❌ Leider falsch."}</b>${q.expl?"<br>"+esc(q.expl):""}</div>`;
+    record(q,ok);chk.dataset.done=1;chk.textContent=lastQ()?"Ergebnis anzeigen":"Weiter";
+  };
+}
+
+function showOpen(q,head){
+  const box=$("qbox");
+  box.innerHTML=head+'<textarea id="ans" placeholder="Deine Antwort…"></textarea><div id="fb"></div><div class="row" style="margin-top:12px"><button class="pri" id="rev">Musterantwort zeigen</button></div>';
+  $("rev").onclick=()=>{
+    const txt=($("ans").value||"").toLowerCase(), keys=q.keys||[];
+    const hit=keys.filter(k=>txt.includes(k.toLowerCase()));
+    $("ans").disabled=true;
+    $("fb").innerHTML=`<div class="expl"><b>Musterantwort:</b><br>${esc(q.a)}`+
+      (keys.length?`<br><br><b>Stichwörter:</b> ${keys.map(k=>hit.includes(k)?`✅ ${esc(k)}`:`⬜ ${esc(k)}`).join(" · ")}`:"")+
+      `</div><p><b>Wie gut wusstest du es?</b></p><div class="row"><button id="r1">✅ Gewusst</button><button id="r0">❌ Nicht gewusst</button></div>`;
+    $("rev").classList.add("hide");
+    $("r1").onclick=()=>{record(q,true);next()};
+    $("r0").onclick=()=>{record(q,false);next()};
+  };
+}
+
+const lastQ=()=>session.i>=session.qs.length-1;
+function next(){session.i++;session.i>=session.qs.length?finish():show()}
+
+function finish(){
+  const s=session,answered=s.score+s.wrong.length,pct=answered?Math.round(s.score/answered*100):0;
+  $("quiz").classList.add("hide");$("result").classList.remove("hide");
+  $("result").innerHTML=`<div class="big">${pct}%</div><p>${s.score} von ${answered} richtig – ${pct>=80?"Super, du bist gut vorbereitet! 🎉":pct>=60?"Gut, noch etwas Wiederholung. 💪":"Weiter üben – du schaffst das! 📚"}</p>`+
+   (s.wrong.length?`<h3>Zum Wiederholen</h3><ul>${s.wrong.map(q=>`<li><b>${esc(q.q)}</b><br><span class="muted">${esc(q.type==="mc"?q.a.map(i=>q.opts[i]).join(" / "):q.a)}</span></li>`).join("")}</ul>`:"")+
+   `<div class="row" style="margin-top:14px"><button class="pri" id="again">Zurück zum Start</button>${s.wrong.length?'<button id="redo">Falsche nochmal üben</button>':""}</div>`;
+  $("again").onclick=()=>{$("result").classList.add("hide");$("start").classList.remove("hide");rebuild()};
+  if(s.wrong.length)$("redo").onclick=()=>{
+    session={qs:shuffle(s.wrong),i:0,score:0,wrong:[]};
+    $("result").classList.add("hide");$("quiz").classList.remove("hide");show();
+  };
+}
+
+/* ===================== IMPORT ===================== */
+$("impBtn").onclick=()=>{
+  try{
+    const arr=JSON.parse($("imp").value);
+    if(!Array.isArray(arr))throw new Error("Muss ein Array sein []");
+    const ok=arr.filter(q=>q&&q.q&&((q.type==="mc"&&Array.isArray(q.opts)&&Array.isArray(q.a))||(q.type==="open"&&q.a)));
+    if(!ok.length)throw new Error("Keine gültigen Fragen gefunden");
+    custom=custom.concat(ok);save(LS_CUSTOM,custom);rebuild();
+    $("impMsg").textContent=`✅ ${ok.length} Fragen importiert (${arr.length-ok.length} übersprungen).`;$("imp").value="";
+  }catch(e){$("impMsg").textContent="❌ Fehler: "+e.message}
+};
+$("resetCustom").onclick=()=>{if(confirm("Alle eigenen Fragen löschen?")){custom=[];save(LS_CUSTOM,custom);rebuild()}};
+$("resetProg").onclick=()=>{if(confirm("Lernfortschritt zurücksetzen?")){prog={};save(LS_PROG,prog);rebuild()}};
+
+rebuild();
+</script>
+</body>
+</html>
