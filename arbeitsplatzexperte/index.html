@@ -29,6 +29,7 @@ textarea{min-height:110px;resize:vertical}
 .bar>div{height:100%;background:var(--pri);transition:width .2s}
 .tag{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-right:6px}
 .expl{margin-top:12px;padding:12px;border-left:4px solid var(--pri);background:var(--bg);border-radius:6px}
+.src{margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-size:.92rem}.src a{color:var(--pri)}
 .big{font-size:2.4rem;font-weight:700}
 .muted{color:var(--muted)}
 .hide{display:none}
@@ -63,7 +64,7 @@ ul{padding-left:20px;margin:6px 0}
       <summary>Eigene Fragen hinzufügen / Daten verwalten</summary>
       <p class="muted">Du kannst deine Unterlagen in ChatGPT/Claude in dieses JSON-Format umwandeln lassen und hier einfügen:</p>
       <pre style="white-space:pre-wrap;font-size:.8rem;background:var(--bg);padding:10px;border-radius:8px">[
- {"type":"mc","cat":"Thema","q":"Frage?","opts":["A","B","C","D"],"a":[1],"expl":"Erklärung"},
+ {"type":"mc","cat":"Thema","q":"Frage?","opts":["A","B","C","D"],"a":[1],"expl":"Erklärung","src":[{"t":"Folie 12","u":"https://…"}]},
  {"type":"open","cat":"Thema","q":"Frage?","a":"Musterantwort","keys":["Stichwort1","Stichwort2"]}
 ]</pre>
       <textarea id="imp" placeholder="JSON hier einfügen…"></textarea>
@@ -165,6 +166,44 @@ const BASE = [
 {type:"open",cat:"Datenschutz & Organisation",q:"Was sind die 5S-Regeln (5S-Methode) für Arbeitsplatzorganisation?",a:"Sortieren (Unnötiges entfernen), Systematisieren (Ordnung schaffen, alles hat seinen Platz), Säubern (sauber halten), Standardisieren (einheitliche Regeln), Selbstdisziplin (dauerhaft einhalten).",keys:["Sortieren","Systematisieren","Säubern","Standardisieren","Selbstdisziplin"]}
 ];
 
+
+/* ===================== QUELLEN ===================== */
+/* Eigene Fragen können src:[{"t":"Folie 12","u":"https://…"}] enthalten. Für die eingebauten Fragen: Gesetzestexte. */
+const G="https://www.gesetze-im-internet.de/";
+const SRC=[
+ ["Welches Gesetz verpflichtet",[["ArbSchG – Gesetzestext",G+"arbschg/"]]],
+ ["Was ist eine Gefährdungsbeurteilung",[["§ 5 ArbSchG",G+"arbschg/__5.html"]]],
+ ["Wer ist für die Durchführung der Gefährdungsbeurteilung",[["§ 3 ArbSchG (Grundpflichten)",G+"arbschg/__3.html"],["§ 13 ArbSchG (Verantwortliche Personen)",G+"arbschg/__13.html"]]],
+ ["Wie oft muss eine Unterweisung",[["§ 12 ArbSchG (Unterweisung)",G+"arbschg/__12.html"]]],
+ ["Welche Verordnung regelt u. a. Raumabmessungen",[["Arbeitsstättenverordnung",G+"arbst_ttv_2004/"]]],
+ ["Welche Aufgaben hat die Fachkraft",[["Arbeitssicherheitsgesetz (ASiG)",G+"asig/"],["§ 6 ASiG (Aufgaben)",G+"asig/__6.html"]]],
+ ["Nenne die Schritte einer Gefährdungsbeurteilung",[["§ 5 ArbSchG",G+"arbschg/__5.html"]]],
+ ["Welche Pflichten haben Beschäftigte",[["§ 15 ArbSchG",G+"arbschg/__15.html"],["§ 16 ArbSchG",G+"arbschg/__16.html"]]],
+ ["Welche Aussagen zur gesetzlichen Unfallversicherung",[["SGB VII – Gesetzliche Unfallversicherung",G+"sgb_7/"]]],
+ ["Was gilt als Wegeunfall",[["§ 8 SGB VII (Arbeitsunfall)",G+"sgb_7/__8.html"]]],
+ ["Wozu dient die Arbeitsmedizinische Vorsorge",[["ArbMedVV",G+"arbmedvv/"]]],
+ ["Welche Beleuchtungsstärke",[["ASR A3.4 „Beleuchtung“ (BAuA, Technische Regeln für Arbeitsstätten)",null]]],
+ ["Welche Raumtemperatur gilt",[["ASR A3.5 „Raumtemperatur“ (BAuA), Abschnitt 4",null]]],
+ ["Ab welchem Dauerschallpegel",[["Lärm- und Vibrations-Arbeitsschutzverordnung",G+"l_rmvibrationsarbschv/"]]],
+ ["Ist die Beurteilung psychischer Belastung",[["§ 5 Abs. 3 Nr. 6 ArbSchG",G+"arbschg/__5.html"]]],
+ ["Wann muss der Arbeitgeber ein Betriebliches Eingliederungsmanagement",[["§ 167 SGB IX",G+"sgb_9_2018/__167.html"]]],
+ ["Wie viele Stunden darf die tägliche Arbeitszeit",[["§ 3 ArbZG",G+"arbzg/__3.html"]]],
+ ["Wie lang muss die Ruhepause",[["§ 4 ArbZG",G+"arbzg/__4.html"]]],
+ ["Wie lang muss die ununterbrochene Ruhezeit",[["§ 5 ArbZG",G+"arbzg/__5.html"]]],
+ ["Wie ist Sonn- und Feiertagsarbeit",[["§ 9 ArbZG",G+"arbzg/__9.html"],["§ 10 ArbZG",G+"arbzg/__10.html"]]],
+ ["Wer darf elektrische Geräte reparieren",[["DGUV Vorschrift 3 (publikationen.dguv.de)","https://publikationen.dguv.de/"]]],
+ ["Worin unterscheidet sich Telearbeit",[["§ 2 Abs. 7 ArbStättV (Telearbeitsplätze)",G+"arbst_ttv_2004/__2.html"]]]
+];
+function srcFor(q){
+  const own=Array.isArray(q.src)?q.src:[];
+  const hit=SRC.find(s=>q.q.startsWith(s[0]));
+  return own.concat(hit?hit[1].map(([t,u])=>({t,u})):[]);
+}
+function srcHtml(q){
+  const l=srcFor(q);if(!l.length)return"";
+  return '<div class="src"><b>📖 Nachlesen:</b> '+l.map(s=>/^https?:\/\//.test(s.u||"")?`<a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a>`:esc(s.t)).join(" · ")+'</div>';
+}
+
 /* ===================== STATE ===================== */
 const LS_CUSTOM="ape_custom_v1", LS_PROG="ape_prog_v1";
 const $=id=>document.getElementById(id);
@@ -231,7 +270,7 @@ function showMC(q,head){
     const right=new Set(q.a), ok=sel.size===right.size&&[...sel].every(i=>right.has(i));
     btns.forEach(b=>{const i=+b.dataset.i;b.disabled=true;
       if(right.has(i))b.classList.add("ok");else if(sel.has(i))b.classList.add("bad");b.classList.remove("sel")});
-    $("fb").innerHTML=`<div class="expl"><b>${ok?"✅ Richtig!":"❌ Leider falsch."}</b>${q.expl?"<br>"+esc(q.expl):""}</div>`;
+    $("fb").innerHTML=`<div class="expl"><b>${ok?"✅ Richtig!":"❌ Leider falsch."}</b>${q.expl?"<br>"+esc(q.expl):""}${srcHtml(q)}</div>`;
     record(q,ok);chk.dataset.done=1;chk.textContent=lastQ()?"Ergebnis anzeigen":"Weiter";
   };
 }
@@ -245,7 +284,7 @@ function showOpen(q,head){
     $("ans").disabled=true;
     $("fb").innerHTML=`<div class="expl"><b>Musterantwort:</b><br>${esc(q.a)}`+
       (keys.length?`<br><br><b>Stichwörter:</b> ${keys.map(k=>hit.includes(k)?`✅ ${esc(k)}`:`⬜ ${esc(k)}`).join(" · ")}`:"")+
-      `</div><p><b>Wie gut wusstest du es?</b></p><div class="row"><button id="r1">✅ Gewusst</button><button id="r0">❌ Nicht gewusst</button></div>`;
+      srcHtml(q)+`</div><p><b>Wie gut wusstest du es?</b></p><div class="row"><button id="r1">✅ Gewusst</button><button id="r0">❌ Nicht gewusst</button></div>`;
     $("rev").classList.add("hide");
     $("r1").onclick=()=>{record(q,true);next()};
     $("r0").onclick=()=>{record(q,false);next()};
